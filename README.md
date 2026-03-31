@@ -76,6 +76,32 @@ The goal of the project is to demonstrate:
 
 ---
 
+## Course Project Assignment
+
+**Topic:** Development of a web platform for publishing and playing browser-based games (WhyGame)
+
+**Student:** whynotfu  
+**Group:** *(group number)*
+
+### Development Tasks
+
+1. **User authentication and authorization** — implement registration, login, and logout functionality using session-based or token-based authentication.
+
+2. **Role-based access control** — define user roles (guest, registered user, game developer, administrator) and enforce permissions accordingly (e.g., only developers can publish games, only admins can delete any content).
+
+3. **CRUD interface** — implement full create, read, update, and delete operations for the core entities: Users, Games, and Comments.
+
+4. **Data aggregation and processing** — aggregate game statistics (total plays, average rating, number of downloads); provide a game catalog with filtering and sorting by genre, rating, and release date.
+
+5. **File upload and download** — support uploading Unity WebGL game builds (zip archives with HTML/JS/WASM assets) and offering downloadable game packages for local play.
+
+6. **Application entities (minimum 3):**
+   - **User** — account data, role, profile information
+   - **Game** — title, description, genre, build files, metadata
+   - **Comment / Rating** — user feedback and numerical ratings per game
+
+---
+
 ## Status
 
 Project in active development.
