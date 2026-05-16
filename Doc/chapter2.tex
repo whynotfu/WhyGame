@@ -1,0 +1,379 @@
+\section*{Глава 2. Проектирование веб-приложения}
+\addcontentsline{toc}{section}{Глава 2. Проектирование веб-приложения}
+\stepcounter{section}
+
+\subsection{Анализ целевой аудитории и ролевая модель}
+
+Платформа WhyGame рассчитана на два типа аудитории: \textbf{разработчиков игр},
+желающих публиковать проекты без финансовых барьеров, и \textbf{игроков},
+заинтересованных в удобном каталоге браузерных игр. Исходя из бизнес-логики
+платформы, определены пять ролей пользователей с различными уровнями доступа.
+
+\textbf{Гость (Guest)} --- неаутентифицированный посетитель. Имеет доступ к
+каталогу, страницам игр и браузерному запуску, но не может оставлять комментарии
+и оценки.
+
+\textbf{Пользователь (User)} --- зарегистрированный участник. Может запускать
+и скачивать игры, оставлять комментарии и выставлять оценки, редактировать
+собственный профиль.
+
+\textbf{Разработчик (Developer)} --- роль, запрашиваемая пользователем или
+назначаемая администратором. Обладает всеми правами пользователя, а также
+может загружать, редактировать и удалять собственные игры, просматривать
+статистику своих публикаций в личном кабинете.
+
+\textbf{Модератор (Moderator)} --- роль, назначаемая администратором для помощи
+в проверке контента. Может просматривать все поданные на модерацию игры, одобрять
+или скрывать публикации, удалять нарушающие правила комментарии. Не имеет доступа
+к управлению ролями пользователей.
+
+\textbf{Администратор (Admin)} --- привилегированная роль, назначаемая вручную.
+Обладает полным доступом: включает все права модератора, а также управляет ролями
+пользователей и имеет доступ ко всем разделам административной панели.
+
+Матрица прав доступа по основным операциям системы приведена в
+таблице~\ref{tab:roles}.
+
+\begin{table}[ht!]
+    \centering
+    \caption{Матрица прав доступа по ролям}
+    \label{tab:roles}
+    \small
+    \begin{tabularx}{\textwidth}{|X|c|c|c|c|c|}
+        \hline
+        \textbf{Операция} &
+        \textbf{Гость} &
+        \textbf{Польз-ль} &
+        \textbf{Разраб.} &
+        \textbf{Модер.} &
+        \textbf{Администр.} \\ \hline
+        Просмотр каталога и страниц игр     & Да & Да & Да & Да & Да \\ \hline
+        Запуск игры в браузере              & Да & Да & Да & Да & Да \\ \hline
+        Скачивание игры                     & Да & Да & Да & Да & Да \\ \hline
+        Регистрация / вход                  & Да & --  & --  & --  & -- \\ \hline
+        Комментирование игр                 & --  & Да & Да & Да & Да \\ \hline
+        Выставление оценки                  & --  & Да & Да & Да & Да \\ \hline
+        Редактирование профиля              & --  & Да & Да & Да & Да \\ \hline
+        Загрузка и публикация игры          & --  & --  & Да & --  & Да \\ \hline
+        Редактирование / удаление своей игры& --  & --  & Да & --  & Да \\ \hline
+        Просмотр статистики в кабинете      & --  & --  & Да & --  & Да \\ \hline
+        Просмотр очереди на модерацию       & --  & --  & --  & Да & Да \\ \hline
+        Одобрение / скрытие игр             & --  & --  & --  & Да & Да \\ \hline
+        Удаление комментариев               & --  & --  & --  & Да & Да \\ \hline
+        Управление ролями пользователей     & --  & --  & --  & --  & Да \\ \hline
+    \end{tabularx}
+\end{table}
+
+\subsection{Функциональные требования}
+
+На основе ролевой модели выделены ключевые варианты использования системы,
+представленные в виде диаграммы на рисунке~\ref{fig:use_case}.
+
+\begin{figure}[ht!]
+    \centering
+    \includegraphics[width=0.92\textwidth]{use_case}
+    \caption{Диаграмма вариантов использования WhyGame}
+    \label{fig:use_case}
+\end{figure}
+
+Диаграмма фиксирует взаимодействие пяти акторов со следующими группами
+вариантов использования:
+\begin{itemize}
+    \item \textbf{Просмотр и запуск} --- доступны всем акторам: каталог, страница
+          игры, браузерный плеер, скачивание архива;
+    \item \textbf{Управление аккаунтом} --- регистрация (только гость), вход,
+          выход, редактирование профиля;
+    \item \textbf{Социальная активность} --- комментарии и оценки (пользователь
+          и выше);
+    \item \textbf{Публикация игр} --- загрузка сборки, редактирование и удаление
+          (разработчик и выше);
+    \item \textbf{Модерация контента} --- просмотр очереди, одобрение / скрытие
+          игр, удаление комментариев (модератор и администратор);
+    \item \textbf{Администрирование} --- управление ролями пользователей
+          (только администратор).
+\end{itemize}
+
+Маршруты (URL-эндпоинты) приложения, соответствующие вариантам использования,
+приведены в таблице~\ref{tab:routes}.
+
+\begin{table}[ht!]
+    \centering
+    \caption{Маршруты веб-приложения WhyGame}
+    \label{tab:routes}
+    \small
+    \begin{tabularx}{\textwidth}{|p{1.4cm}|p{4.5cm}|p{2.5cm}|X|}
+        \hline
+        \textbf{Метод} & \textbf{URL} & \textbf{Мин. роль} & \textbf{Назначение} \\ \hline
+        GET  & /                        & Гость        & Главная страница (витрина игр) \\ \hline
+        GET  & /catalog                 & Гость        & Каталог с фильтрацией и поиском \\ \hline
+        GET  & /game/\textlangle{}id\textrangle{}             & Гость        & Страница игры: описание, плеер, оценки, комментарии \\ \hline
+        POST & /game/\textlangle{}id\textrangle{}/play        & Гость        & Фиксация запуска (инкремент \texttt{play\_count}) \\ \hline
+        GET  & /game/\textlangle{}id\textrangle{}/download    & Гость        & Скачивание ZIP-архива сборки \\ \hline
+        GET/POST & /register            & Гость        & Регистрация нового аккаунта \\ \hline
+        GET/POST & /login               & Гость        & Вход в систему \\ \hline
+        GET  & /logout                  & Пользователь & Выход из системы \\ \hline
+        GET/POST & /profile/edit        & Пользователь & Редактирование своего профиля \\ \hline
+        POST & /game/\textlangle{}id\textrangle{}/comment     & Пользователь & Добавление комментария \\ \hline
+        POST & /game/\textlangle{}id\textrangle{}/rate        & Пользователь & Выставление оценки (1--5) \\ \hline
+        GET  & /dashboard               & Разработчик  & Кабинет разработчика со статистикой \\ \hline
+        GET/POST & /game/upload         & Разработчик  & Загрузка новой игры \\ \hline
+        GET/POST & /game/\textlangle{}id\textrangle{}/edit    & Разработчик  & Редактирование своей игры \\ \hline
+        POST & /game/\textlangle{}id\textrangle{}/delete      & Разработчик  & Удаление своей игры \\ \hline
+        GET  & /admin                   & Модератор     & Панель модерации (очередь игр) \\ \hline
+        POST & /admin/game/\textlangle{}id\textrangle{}/approve & Модератор  & Одобрение игры для публикации \\ \hline
+        POST & /admin/game/\textlangle{}id\textrangle{}/hide  & Модератор    & Скрытие игры из каталога \\ \hline
+        POST & /admin/comment/\textlangle{}id\textrangle{}/delete & Модератор & Удаление нарушающего правила комментария \\ \hline
+        POST & /admin/user/\textlangle{}id\textrangle{}/role  & Администратор & Назначение роли пользователю \\ \hline
+    \end{tabularx}
+\end{table}
+
+\subsection{Проектирование модели данных}
+
+База данных платформы построена на реляционной модели и включает четыре основные
+сущности: \texttt{users}, \texttt{games}, \texttt{comments} и \texttt{ratings}.
+ER-диаграмма, отражающая состав полей и связи между таблицами, представлена на
+рисунке~\ref{fig:er_diagram}.
+
+\begin{figure}[ht!]
+    \centering
+    \includegraphics[width=\textwidth]{er_diagram}
+    \caption{ER-диаграмма базы данных WhyGame}
+    \label{fig:er_diagram}
+\end{figure}
+
+Связи между сущностями имеют следующий характер:
+\begin{itemize}
+    \item \texttt{users} $\longleftrightarrow$ \texttt{games}: один разработчик
+          может иметь несколько игр (1:N, внешний ключ \texttt{developer\_id});
+    \item \texttt{games} $\longleftrightarrow$ \texttt{comments}: одна игра может
+          иметь несколько комментариев (1:N, внешний ключ \texttt{game\_id});
+    \item \texttt{games} $\longleftrightarrow$ \texttt{ratings}: одна игра может
+          иметь несколько оценок (1:N, уникальность пары \texttt{game\_id} +
+          \texttt{user\_id} исключает повторное голосование).
+\end{itemize}
+
+Структура таблицы \texttt{users} представлена в таблице~\ref{tab:db_users}.
+
+\begin{longtable}{|l|l|p{3.5cm}|p{5.5cm}|}
+    \caption{Структура таблицы пользователей (\texttt{users})}
+    \label{tab:db_users} \\
+    \hline
+    \textbf{Поле} & \textbf{Тип} & \textbf{Ограничение} & \textbf{Описание} \\ \hline
+    \endfirsthead
+    \tabcont{\ref{tab:db_users}}
+    \textbf{Поле} & \textbf{Тип} & \textbf{Ограничение} & \textbf{Описание} \\ \hline
+    \endhead
+    \hline
+    \endfoot
+    \hline
+    \endlastfoot
+    id            & INTEGER   & PRIMARY KEY, AUTOINCREMENT & Уникальный идентификатор пользователя \\ \hline
+    username      & VARCHAR(80)  & UNIQUE, NOT NULL        & Имя пользователя для входа и отображения \\ \hline
+    email         & VARCHAR(120) & UNIQUE, NOT NULL        & Адрес электронной почты \\ \hline
+    password\_hash & VARCHAR(255) & NOT NULL               & Хеш пароля (werkzeug pbkdf2) \\ \hline
+    role          & VARCHAR(20)  & NOT NULL, DEFAULT 'user' & Роль: guest, user, developer, admin \\ \hline
+    avatar\_path  & VARCHAR(255) & NULL                    & Путь к загруженному аватару \\ \hline
+    bio           & TEXT         & NULL                    & Краткая биография разработчика \\ \hline
+    created\_at   & TIMESTAMP    & DEFAULT NOW()           & Дата и время регистрации \\ \hline
+\end{longtable}
+
+Структура таблицы \texttt{games} представлена в таблице~\ref{tab:db_games}.
+
+\begin{longtable}{|l|l|p{3.5cm}|p{5.5cm}|}
+    \caption{Структура таблицы игр (\texttt{games})}
+    \label{tab:db_games} \\
+    \hline
+    \textbf{Поле} & \textbf{Тип} & \textbf{Ограничение} & \textbf{Описание} \\ \hline
+    \endfirsthead
+    \tabcont{\ref{tab:db_games}}
+    \textbf{Поле} & \textbf{Тип} & \textbf{Ограничение} & \textbf{Описание} \\ \hline
+    \endhead
+    \hline
+    \endfoot
+    \hline
+    \endlastfoot
+    id             & INTEGER      & PRIMARY KEY, AUTOINCREMENT & Уникальный идентификатор игры \\ \hline
+    title          & VARCHAR(200) & NOT NULL                   & Название игры \\ \hline
+    description    & TEXT         & NULL                       & Описание игры \\ \hline
+    developer\_id  & INTEGER      & FK → users.id, NOT NULL    & Ссылка на автора-разработчика \\ \hline
+    genre          & VARCHAR(50)  & NULL                       & Жанр игры (action, puzzle и т.\,д.) \\ \hline
+    cover\_path    & VARCHAR(255) & NULL                       & Путь к обложке игры \\ \hline
+    build\_path    & VARCHAR(512) & NOT NULL                   & Путь к директории Unity WebGL сборки \\ \hline
+    is\_downloadable & BOOLEAN    & DEFAULT FALSE              & Флаг доступности ZIP-архива \\ \hline
+    status         & VARCHAR(20)  & DEFAULT 'pending'          & Статус: pending, published, hidden \\ \hline
+    play\_count    & INTEGER      & DEFAULT 0                  & Счётчик запусков игры \\ \hline
+    download\_count & INTEGER     & DEFAULT 0                  & Счётчик скачиваний \\ \hline
+    created\_at    & TIMESTAMP    & DEFAULT NOW()              & Дата публикации \\ \hline
+    updated\_at    & TIMESTAMP    & DEFAULT NOW()              & Дата последнего редактирования \\ \hline
+\end{longtable}
+
+Структура таблицы \texttt{comments} представлена в таблице~\ref{tab:db_comments}.
+
+\begin{table}[ht!]
+    \centering
+    \caption{Структура таблицы комментариев (\texttt{comments})}
+    \label{tab:db_comments}
+    \small
+    \begin{tabularx}{\textwidth}{|l|l|p{3.5cm}|X|}
+        \hline
+        \textbf{Поле} & \textbf{Тип} & \textbf{Ограничение} & \textbf{Описание} \\ \hline
+        id         & INTEGER   & PRIMARY KEY, AUTOINCREMENT & Уникальный идентификатор комментария \\ \hline
+        game\_id   & INTEGER   & FK → games.id, NOT NULL    & Игра, к которой относится комментарий \\ \hline
+        author\_id & INTEGER   & FK → users.id, NOT NULL    & Пользователь, оставивший комментарий \\ \hline
+        body       & TEXT      & NOT NULL                   & Текст комментария \\ \hline
+        created\_at & TIMESTAMP & DEFAULT NOW()             & Дата и время публикации \\ \hline
+    \end{tabularx}
+\end{table}
+
+Структура таблицы \texttt{ratings} представлена в таблице~\ref{tab:db_ratings}.
+
+\begin{table}[ht!]
+    \centering
+    \caption{Структура таблицы оценок (\texttt{ratings})}
+    \label{tab:db_ratings}
+    \small
+    \begin{tabularx}{\textwidth}{|l|l|p{3.5cm}|X|}
+        \hline
+        \textbf{Поле} & \textbf{Тип} & \textbf{Ограничение} & \textbf{Описание} \\ \hline
+        id         & INTEGER    & PRIMARY KEY, AUTOINCREMENT        & Уникальный идентификатор оценки \\ \hline
+        game\_id   & INTEGER    & FK → games.id, NOT NULL           & Оцениваемая игра \\ \hline
+        user\_id   & INTEGER    & FK → users.id, NOT NULL           & Пользователь, поставивший оценку \\ \hline
+        score      & SMALLINT   & CHECK(1 $\leq$ score $\leq$ 5), NOT NULL & Числовая оценка от 1 до 5 \\ \hline
+        created\_at & TIMESTAMP & DEFAULT NOW()                     & Дата и время выставления оценки \\ \hline
+        ---        & ---        & UNIQUE(game\_id, user\_id)        & Ограничение: не более одной оценки от пользователя за игру \\ \hline
+    \end{tabularx}
+\end{table}
+
+Агрегированный рейтинг игры вычисляется как среднее арифметическое по всем
+оценкам:
+
+\begin{equation}
+    \bar{R} = \frac{1}{N} \sum_{i=1}^{N} s_i,
+    \label{eq:avg_rating}
+\end{equation}
+
+\begin{where}
+    \item $s_i$~--- оценка $i$-го пользователя (целое число от 1 до 5);
+    \item $N$~--- общее количество оценок игры.
+\end{where}
+
+\subsection{Архитектура приложения}
+
+Приложение построено по трёхуровневой архитектуре (рисунок~\ref{fig:architecture}):
+клиентский уровень (браузер), серверный уровень (Flask-приложение) и уровень
+хранения данных (PostgreSQL и файловая система).
+
+\begin{figure}[ht!]
+    \centering
+    \includegraphics[width=0.88\textwidth]{app_architecture}
+    \caption{Трёхуровневая архитектура приложения WhyGame}
+    \label{fig:architecture}
+\end{figure}
+
+Серверный уровень организован по шаблону \textbf{Application Factory}: функция
+\texttt{create\_app()} создаёт и конфигурирует экземпляр приложения, подключает
+расширения (SQLAlchemy, Migrate, Login Manager) и регистрирует блупринты (Blueprint).
+Такой подход упрощает тестирование и позволяет создавать несколько экземпляров
+приложения с разной конфигурацией.
+
+Маршруты сгруппированы в четыре блупринта по функциональному назначению:
+\textbf{auth} (регистрация, вход, выход), \textbf{games} (каталог, просмотр, загрузка,
+редактирование), \textbf{users} (профили) и \textbf{admin} (панель модерации).
+Каждый блупринт выделен в отдельный модуль.
+
+Структура каталога проекта показана в листинге~\ref{lst:structure}.
+
+\begin{lstlisting}[caption={Структура проекта WhyGame}, label={lst:structure}]
+WhyGame/
+  app/
+    __init__.py          # Application Factory, инициализация расширений
+    models.py            # SQLAlchemy-модели: User, Game, Comment, Rating
+    blueprints/
+      auth.py            # Маршруты: /register, /login, /logout
+      games.py           # Маршруты: /catalog, /game/<id>, /game/upload
+      users.py           # Маршруты: /profile, /user/<username>
+      admin.py           # Маршруты: /admin, /admin/game, /admin/user
+    templates/
+      base.html          # Базовый шаблон (навигация, подключение CSS/JS)
+      catalog.html       # Каталог игр
+      game.html          # Страница игры (плеер, комментарии, оценки)
+      upload.html        # Форма загрузки игры
+      dashboard.html     # Личный кабинет разработчика
+    static/
+      css/               # Стили
+      js/                # Клиентские скрипты
+      uploads/           # Директория хранения игровых сборок
+  config.py              # Конфигурация: SECRET_KEY, DATABASE_URL
+  run.py                 # Точка запуска
+  requirements.txt       # Зависимости Python
+\end{lstlisting}
+
+Хранение игровых сборок Unity WebGL организовано в файловой системе сервера.
+При загрузке ZIP-архива его содержимое распаковывается в директорию
+\texttt{static/uploads/<game\_id>/}. Для запуска игры Flask отдаёт входной
+HTML-файл сборки через соответствующий маршрут; браузер самостоятельно загружает
+файлы \texttt{.wasm} и \texttt{.data}, которые обслуживаются как статические
+ресурсы.
+
+\subsection{Проектирование интерфейса}
+
+Интерфейс платформы проектировался из расчёта трёх ключевых сценариев использования:
+просмотр каталога, запуск игры и загрузка новой публикации.
+
+\textbf{Каталог игр} --- основная точка входа для игроков. Страница содержит
+сетку карточек игр с обложкой, названием, жанром и средним рейтингом. Предусмотрены
+поле поиска по названию и фильтры по жанру и статусу. В верхней части страницы
+расположена навигационная панель с логотипом платформы, ссылками на разделы
+и кнопками «Войти» / «Профиль». Кнопка «Загрузить игру» отображается только
+пользователям с ролью разработчика или администратора.
+
+\textbf{Страница игры} --- центральный элемент взаимодействия. Включает заголовок
+и имя разработчика, встроенный \texttt{<canvas>}-плеер для Unity WebGL, блок
+статистики (количество запусков и оценок), форму выставления оценки (5 звёздочек,
+доступна авторизованным пользователям), текстовое описание игры, кнопку скачивания
+ZIP-архива (если активирована разработчиком) и секцию комментариев с формой
+добавления нового.
+
+\textbf{Форма загрузки игры} --- доступна пользователям с ролью разработчика.
+Содержит следующие поля: название игры (однострочный текст), описание
+(многострочное поле), жанр (выпадающий список), загрузка обложки (JPG / PNG),
+загрузка сборки Unity WebGL (ZIP-архив) и флаг «Разрешить скачивание». После
+отправки формы игра переходит в статус \texttt{pending} и ожидает одобрения
+модератора.
+
+\textbf{Личный кабинет разработчика} --- доступен по адресу \texttt{/dashboard}.
+Отображает список собственных игр с их статусами, счётчиками запусков, скачиваний
+и средним рейтингом. Предоставляет быстрый доступ к редактированию и удалению
+каждой публикации.
+
+\subsection{Макет страницы}
+
+Для визуализации ключевых экранов платформы разработаны макеты двух основных
+страниц: каталога игр и страницы отдельной игры. Макеты отражают расположение
+элементов интерфейса до начала вёрстки и служат ориентиром при реализации
+HTML"=шаблонов.
+
+\textbf{Макет каталога игр} (рисунок~\ref{fig:mockup_catalog}) демонстрирует
+структуру главного экрана платформы: навигационная панель с логотипом и кнопками
+авторизации, строка поиска и фильтры по жанру, а также сетка карточек игр
+с обложкой, названием и средним рейтингом.
+
+\begin{figure}[ht!]
+    \centering
+    \includegraphics[width=0.9\textwidth]{mockup_catalog}
+    \caption{Макет страницы каталога игр WhyGame}
+    \label{fig:mockup_catalog}
+\end{figure}
+
+\textbf{Макет страницы игры} (рисунок~\ref{fig:mockup_game}) отражает компоновку
+страницы отдельной игры: заголовок с именем разработчика, встроенный
+\texttt{<canvas>}"=плеер Unity WebGL, блок статистики (запуски, оценка),
+форма выставления оценки, текстовое описание, кнопка скачивания ZIP"=архива
+и секция комментариев.
+
+\begin{figure}[ht!]
+    \centering
+    \includegraphics[width=0.9\textwidth]{mockup_game}
+    \caption{Макет страницы игры WhyGame}
+    \label{fig:mockup_game}
+\end{figure}

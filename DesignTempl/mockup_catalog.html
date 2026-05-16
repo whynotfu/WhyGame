@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WhyGame — Каталог игр</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <a class="navbar__logo" href="#">WhyGame</a>
+
+    <ul class="navbar__links">
+      <li><a href="#">Каталог</a></li>
+      <li><a href="#">Жанры</a></li>
+      <li><a href="#">Разработчикам</a></li>
+    </ul>
+
+    <div class="navbar__actions">
+      <a class="btn btn--ghost" href="#">Войти</a>
+      <a class="btn btn--primary" href="#">Регистрация</a>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <main class="container">
+
+    <!-- FILTERS -->
+    <div class="filters">
+      <span class="filters__label">Поиск:</span>
+      <input class="search-input" type="text" placeholder="Название игры..." />
+
+      <span class="filters__label">Жанр:</span>
+      <select class="select">
+        <option>Все жанры</option>
+        <option>Action</option>
+        <option>Puzzle</option>
+        <option>Platformer</option>
+        <option>Strategy</option>
+        <option>RPG</option>
+      </select>
+
+      <select class="select">
+        <option>Сортировка: новые</option>
+        <option>По рейтингу</option>
+        <option>По запускам</option>
+      </select>
+    </div>
+
+    <!-- SECTION -->
+    <h2 class="section-title">Все игры</h2>
+
+    <!-- GRID -->
+    <div class="game-grid">
+
+      <!-- Card 1 -->
+      <div class="card">
+        <div class="card__cover-placeholder">🎮</div>
+        <div class="card__body">
+          <div class="card__genre">Action</div>
+          <div class="card__title">Neon Runner</div>
+          <div class="card__meta">
+            <span class="stars">★★★★☆</span>
+            <span class="plays">▶ 1 248 запусков</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 2 -->
+      <div class="card">
+        <div class="card__cover-placeholder">🧩</div>
+        <div class="card__body">
+          <div class="card__genre">Puzzle</div>
+          <div class="card__title">Crystal Maze</div>
+          <div class="card__meta">
+            <span class="stars">★★★★★</span>
+            <span class="plays">▶ 3 501 запусков</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 3 -->
+      <div class="card">
+        <div class="card__cover-placeholder">🏰</div>
+        <div class="card__body">
+          <div class="card__genre">Strategy</div>
+          <div class="card__title">Tower of Fate</div>
+          <div class="card__meta">
+            <span class="stars">★★★☆☆</span>
+            <span class="plays">▶ 742 запуска</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 4 -->
+      <div class="card">
+        <div class="card__cover-placeholder">🚀</div>
+        <div class="card__body">
+          <div class="card__genre">Platformer</div>
+          <div class="card__title">Astro Jump</div>
+          <div class="card__meta">
+            <span class="stars">★★★★☆</span>
+            <span class="plays">▶ 2 089 запусков</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 5 -->
+      <div class="card">
+        <div class="card__cover-placeholder">⚔️</div>
+        <div class="card__body">
+          <div class="card__genre">RPG</div>
+          <div class="card__title">Shadow Realm</div>
+          <div class="card__meta">
+            <span class="stars">★★★★★</span>
+            <span class="plays">▶ 5 320 запусков</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 6 -->
+      <div class="card">
+        <div class="card__cover-placeholder">🌊</div>
+        <div class="card__body">
+          <div class="card__genre">Puzzle</div>
+          <div class="card__title">Ocean Drift</div>
+          <div class="card__meta">
+            <span class="stars">★★★★☆</span>
+            <span class="plays">▶ 980 запусков</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 7 -->
+      <div class="card">
+        <div class="card__cover-placeholder">🤖</div>
+        <div class="card__body">
+          <div class="card__genre">Action</div>
+          <div class="card__title">RoboWar</div>
+          <div class="card__meta">
+            <span class="stars">★★★☆☆</span>
+            <span class="plays">▶ 1 100 запусков</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 8 -->
+      <div class="card">
+        <div class="card__cover-placeholder">🌿</div>
+        <div class="card__body">
+          <div class="card__genre">Strategy</div>
+          <div class="card__title">Green Kingdom</div>
+          <div class="card__meta">
+            <span class="stars">★★★★☆</span>
+            <span class="plays">▶ 450 запусков</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+</body>
+</html>
