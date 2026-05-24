@@ -1,4 +1,10 @@
-# Python
+# ── Secrets & environment ────────────────────────────────────────
+.env
+.env.*
+!.env.example
+.flaskenv
+
+# ── Python ───────────────────────────────────────────────────────
 __pycache__/
 *.py[cod]
 *.pyo
@@ -10,29 +16,23 @@ dist/
 build/
 .eggs/
 
-# Virtual environment
+# ── Virtual environment ───────────────────────────────────────────
 venv/
 .venv/
 env/
 ENV/
 
-# Environment variables
-.env
-.env.*
-!.env.example
-
-# Flask / instance
+# ── Flask / database ──────────────────────────────────────────────
 instance/
 *.sqlite
 *.db
 
-# Alembic (keep versions, ignore temp)
-# alembic/versions/ — keep tracked
-
-# Storage (user uploads etc.)
+# ── User uploads / game builds ───────────────────────────────────
+App/app/static/uploads/
 storage/
+game_builds/
 
-# IDE / OS
+# ── IDE / OS ──────────────────────────────────────────────────────
 .vscode/
 .idea/
 *.swp
@@ -40,6 +40,6 @@ storage/
 .DS_Store
 Thumbs.db
 
-# Logs
+# ── Logs ──────────────────────────────────────────────────────────
 *.log
 logs/

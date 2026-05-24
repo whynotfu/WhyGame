@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% block title %}WhyGame — Discover & Play{% endblock %}
+
+{% block content %}
+
+{% set feed_new     = new_games     if new_games     else placeholders %}
+{% set feed_popular = popular       if popular       else (placeholders | reverse | list) %}
+
+<!-- ── ГОРИЗОНТАЛЬНЫЕ РЯДЫ ────────────────────────────────────────── -->
+<section class="feed-section">
+  <div class="feed-section__head">
+    <h2 class="feed-section__title">New Releases</h2>
+    <a href="{{ url_for('games.catalog') }}?sort=new" class="feed-section__more">See all →</a>
+  </div>
+  <div class="hrow">
+    {% for g in feed_new %}
+      {% include '_pcard.html' %}
+    {% endfor %}
+  </div>
+</section>
+
+<section class="feed-section">
+  <div class="feed-section__head">
+    <h2 class="feed-section__title">Most Played</h2>
+    <a href="{{ url_for('games.catalog') }}?sort=plays" class="feed-section__more">See all →</a>
+  </div>
+  <div class="hrow">
+    {% for g in feed_popular %}
+      {% include '_pcard.html' %}
+    {% endfor %}
+  </div>
+</section>
+
+<!-- ── ВЕРТИКАЛЬНАЯ ЛЕНТА (бесконечная вниз) ─────────────────────── -->
+<section class="feed-section">
+  <div class="feed-section__head">
+    <h2 class="feed-section__title">All Games</h2>
+  </div>
+
+  <div class="vfeed" id="vfeed">
+    {% set all_cards = feed_new + feed_popular %}
+    {% for g in all_cards %}
+      {% include '_pcard.html' %}
+    {% endfor %}
+  </div>
+
+  <div class="vfeed-sentinel" id="sentinel"></div>
+  <div class="vfeed-loader" id="vloader" style="display:none">Loading…</div>
+</section>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// infinite scroll: подгружаем ещё карточки когда достигаем низа
+let page = 1;
+const sentinel = document.getElementById('sentinel');
+const vfeed    = document.getElementById('vfeed');
+const loader   = document.getElementById('vloader');
+
+const cardTemplates = Array.from(vfeed.querySelectorAll('.pcard'));
+
+const observer = new IntersectionObserver(entries => {
+  if (!entries[0].isIntersecting) return;
+  loader.style.display = 'flex';
+
+  setTimeout(() => {
+    // клонируем существующие карточки (цикл по пулу)
+    const chunk = 6;
+    for (let i = 0; i < chunk; i++) {
+      const src = cardTemplates[(page * chunk + i) % cardTemplates.length];
+      const clone = src.cloneNode(true);
+      vfeed.appendChild(clone);
+    }
+    page++;
+    loader.style.display = 'none';
+  }, 600);
+}, { threshold: 0.1 });
+
+observer.observe(sentinel);
+</script>
+{% endblock %}

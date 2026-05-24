@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}WhyGame{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=REM:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+  <!-- ── NAVBAR ─────────────────────────────────────────────────── -->
+  <header class="navbar">
+    <div class="navbar__inner">
+
+      <!-- logo / brand tab -->
+      <a href="{{ url_for('main.index') }}" class="navbar__logo">
+        <span class="navbar__logo-text">WhyGame</span>
+      </a>
+
+      <!-- nav tabs -->
+      <nav class="navbar__tabs">
+        <a href="{{ url_for('main.index') }}"
+           class="navbar__tab {% if request.endpoint == 'main.index' %}navbar__tab--active{% endif %}">
+          Home
+        </a>
+        <a href="{{ url_for('games.catalog') }}"
+           class="navbar__tab {% if request.endpoint and request.endpoint.startswith('games.') %}navbar__tab--active{% endif %}">
+          Games
+        </a>
+        <a href="{{ url_for('games.catalog') }}?sort=new"
+           class="navbar__tab">
+          New
+        </a>
+        <a href="{{ url_for('games.catalog') }}?sort=plays"
+           class="navbar__tab">
+          Popular
+        </a>
+      </nav>
+
+      <!-- search -->
+      <form class="navbar__search" action="{{ url_for('games.catalog') }}" method="get">
+        <img src="{{ url_for('static', filename='img/search.gif') }}"
+             alt="Search"
+             class="navbar__search-gif"
+             id="searchGif"
+             data-src="{{ url_for('static', filename='img/search.gif') }}">
+        <input class="navbar__search-input" type="text" name="q"
+               placeholder="type...."
+               value="{{ request.args.get('q', '') }}">
+      </form>
+
+      <!-- user area -->
+      <div class="navbar__user">
+        {% if session.get('user_id') %}
+          {% if session.get('role') in ('developer', 'admin') %}
+            <a href="#" class="navbar__tab">Publish</a>
+          {% endif %}
+          <a href="{{ url_for('auth.logout') }}" class="navbar__tab">Logout</a>
+          <div class="navbar__avatar" title="{{ session.username }}">
+            {{ session.username[0].upper() }}
+          </div>
+        {% else %}
+          <a href="{{ url_for('auth.login') }}"
+             class="navbar__tab {% if request.endpoint == 'auth.login' %}navbar__tab--active{% endif %}">
+            Login
+          </a>
+          <a href="{{ url_for('auth.register') }}"
+             class="navbar__tab navbar__tab--cta {% if request.endpoint == 'auth.register' %}navbar__tab--active{% endif %}">
+            Register
+          </a>
+        {% endif %}
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ── FLASH MESSAGES ─────────────────────────────────────────── -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flash-container">
+        {% for category, msg in messages %}
+          <div class="flash flash--{{ category }}">{{ msg }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <!-- ── LAYOUT ─────────────────────────────────────────────────── -->
+  <div class="layout">
+
+    <!-- sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar__section">
+        <span class="sidebar__label">Genres</span>
+        <ul class="sidebar__list">
+          <li>
+            <a href="{{ url_for('games.catalog') }}"
+               class="sidebar__item {% if not request.args.get('genre') and request.endpoint == 'games.catalog' %}sidebar__item--active{% endif %}">
+              All Games
+            </a>
+          </li>
+          {% for g in ['Action','Adventure','Puzzle','RPG','Platformer','Shooter','Strategy','Indie','Horror','Arcade'] %}
+          <li>
+            <a href="{{ url_for('games.catalog') }}?genre={{ g }}"
+               class="sidebar__item {% if request.args.get('genre') == g %}sidebar__item--active{% endif %}">
+              {{ g }}
+            </a>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+
+      {% if session.get('role') in ('developer', 'admin') %}
+      <div class="sidebar__section">
+        <span class="sidebar__label">Developer</span>
+        <ul class="sidebar__list">
+          <li><a href="#" class="sidebar__item">Upload Game</a></li>
+          <li><a href="#" class="sidebar__item">My Games</a></li>
+        </ul>
+      </div>
+      {% endif %}
+    </aside>
+
+    <!-- main content -->
+    <main class="content">
+      {% block content %}{% endblock %}
+    </main>
+
+  </div>
+
+  <footer class="footer">
+    <span>© 2026 WhyGame — whynotfu</span>
+  </footer>
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

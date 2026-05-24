@@ -1,0 +1,30 @@
+{% if g is mapping %}
+  {# placeholder dict #}
+  <div class="pcard">
+    <div class="pcard__thumb">
+      <div class="pcard__overlay">▶</div>
+      <span class="pcard__plays">▶ {{ g.plays }}</span>
+    </div>
+    <div class="pcard__body">
+      <span class="pcard__genre">{{ g.genre }}</span>
+      <h3 class="pcard__title">{{ g.title }}</h3>
+      <span class="pcard__author">{{ g.author }}</span>
+    </div>
+  </div>
+{% else %}
+  {# реальная игра #}
+  <a href="{{ url_for('games.detail', slug=g.slug) }}" class="pcard">
+    <div class="pcard__thumb">
+      {% if g.thumbnail_url %}
+        <img src="{{ g.thumbnail_url }}" alt="{{ g.title }}" loading="lazy">
+      {% endif %}
+      <div class="pcard__overlay">▶</div>
+      <span class="pcard__plays">▶ {{ g.plays }}</span>
+    </div>
+    <div class="pcard__body">
+      <span class="pcard__genre">{{ g.genre or '—' }}</span>
+      <h3 class="pcard__title">{{ g.title }}</h3>
+      <span class="pcard__author">{{ g.author.username }}</span>
+    </div>
+  </a>
+{% endif %}
