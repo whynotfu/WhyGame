@@ -12,6 +12,7 @@ def login():
             session['user_id'] = user.id
             session['username'] = user.username
             session['role'] = user.role
+            session['avatar_url'] = user.avatar_url
             return redirect(url_for('main.index'))
         flash('Invalid credentials', 'error')
     return render_template('auth/login.html')
@@ -33,6 +34,7 @@ def register():
         session['user_id'] = user.id
         session['username'] = user.username
         session['role'] = user.role
+        session['avatar_url'] = user.avatar_url
         return redirect(url_for('main.index'))
     return render_template('auth/register.html')
 

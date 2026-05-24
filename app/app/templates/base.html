@@ -12,70 +12,62 @@
 </head>
 <body>
 
-  <!-- ── NAVBAR ─────────────────────────────────────────────────── -->
-  <header class="navbar">
+  <!-- ── HEADER ROW: navbar pill + avatar рядом ───────────────────── -->
+  <header class="topbar">
+
+    <!-- navbar pill -->
     <div class="navbar__inner">
 
-      <!-- logo / brand tab -->
       <a href="{{ url_for('main.index') }}" class="navbar__logo">
         <span class="navbar__logo-text">WhyGame</span>
       </a>
 
-      <!-- nav tabs -->
       <nav class="navbar__tabs">
         <a href="{{ url_for('main.index') }}"
-           class="navbar__tab {% if request.endpoint == 'main.index' %}navbar__tab--active{% endif %}">
-          Home
-        </a>
+           class="navbar__tab {% if request.endpoint == 'main.index' %}navbar__tab--active{% endif %}">Home</a>
         <a href="{{ url_for('games.catalog') }}"
-           class="navbar__tab {% if request.endpoint and request.endpoint.startswith('games.') %}navbar__tab--active{% endif %}">
-          Games
-        </a>
-        <a href="{{ url_for('games.catalog') }}?sort=new"
-           class="navbar__tab">
-          New
-        </a>
-        <a href="{{ url_for('games.catalog') }}?sort=plays"
-           class="navbar__tab">
-          Popular
-        </a>
+           class="navbar__tab {% if request.endpoint and request.endpoint.startswith('games.') %}navbar__tab--active{% endif %}">Games</a>
+        <a href="{{ url_for('games.catalog') }}?sort=new" class="navbar__tab">New</a>
+        <a href="{{ url_for('games.catalog') }}?sort=plays" class="navbar__tab">Popular</a>
       </nav>
 
-      <!-- search -->
       <form class="navbar__search" action="{{ url_for('games.catalog') }}" method="get">
         <img src="{{ url_for('static', filename='img/search.gif') }}"
-             alt="Search"
-             class="navbar__search-gif"
-             id="searchGif"
+             alt="Search" class="navbar__search-gif" id="searchGif"
              data-src="{{ url_for('static', filename='img/search.gif') }}">
         <input class="navbar__search-input" type="text" name="q"
-               placeholder="type...."
-               value="{{ request.args.get('q', '') }}">
+               placeholder="type...." value="{{ request.args.get('q', '') }}">
       </form>
 
-      <!-- user area -->
       <div class="navbar__user">
         {% if session.get('user_id') %}
           {% if session.get('role') in ('developer', 'admin') %}
             <a href="#" class="navbar__tab">Publish</a>
           {% endif %}
           <a href="{{ url_for('auth.logout') }}" class="navbar__tab">Logout</a>
-          <div class="navbar__avatar" title="{{ session.username }}">
-            {{ session.username[0].upper() }}
-          </div>
         {% else %}
           <a href="{{ url_for('auth.login') }}"
-             class="navbar__tab {% if request.endpoint == 'auth.login' %}navbar__tab--active{% endif %}">
-            Login
-          </a>
+             class="navbar__tab {% if request.endpoint == 'auth.login' %}navbar__tab--active{% endif %}">Login</a>
           <a href="{{ url_for('auth.register') }}"
-             class="navbar__tab navbar__tab--cta {% if request.endpoint == 'auth.register' %}navbar__tab--active{% endif %}">
-            Register
-          </a>
+             class="navbar__tab navbar__tab--cta {% if request.endpoint == 'auth.register' %}navbar__tab--active{% endif %}">Register</a>
         {% endif %}
       </div>
 
     </div>
+
+    <!-- аватар — рядом справа, тот же уровень -->
+    <a href="{{ url_for('auth.login') if not session.get('user_id') else '#' }}"
+       class="profile-avatar" title="{{ session.username if session.get('user_id') else 'Guest' }}">
+      <div class="profile-avatar__frame">
+        {% if session.get('user_id') and session.get('avatar_url') %}
+          <img src="{{ session.avatar_url }}" alt="avatar" class="profile-avatar__img">
+        {% else %}
+          <img src="{{ url_for('static', filename='img/default_avatar.svg') }}"
+               alt="avatar" class="profile-avatar__img">
+        {% endif %}
+      </div>
+    </a>
+
   </header>
 
   <!-- ── FLASH MESSAGES ─────────────────────────────────────────── -->

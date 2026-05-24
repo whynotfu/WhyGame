@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+{% block title %}{{ game.title }} — WhyGame{% endblock %}
+
+{% block content %}
+
+<div class="game-detail">
+
+  <!-- ── GAME HEADER ──────────────────────────────────────────── -->
+  <div class="game-detail__header">
+    <div class="game-detail__meta">
+      <span class="pcard__genre">{{ game.genre }}</span>
+      <h1 class="game-detail__title">{{ game.title }}</h1>
+      <p class="game-detail__author">by {{ game.author.username if game.author else 'unknown' }}</p>
+      <div class="game-detail__stats">
+        <span class="game-detail__stat">▶ {{ game.plays }} plays</span>
+        {% if game.avg_rating %}
+          <span class="game-detail__stat">★ {{ "%.1f"|format(game.avg_rating) }}</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- ── GAME CANVAS ─────────────────────────────────────────── -->
+  <div class="game-detail__frame-wrap">
+    {% if game.iframe_url %}
+      <iframe class="game-detail__frame"
+              src="{{ game.iframe_url }}"
+              allowfullscreen
+              allow="autoplay; fullscreen; keyboard-map"
+              loading="lazy">
+      </iframe>
+    {% else %}
+      <div class="game-detail__no-game">
+        <p>Game build not available yet.</p>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- ── DESCRIPTION ─────────────────────────────────────────── -->
+  {% if game.description %}
+  <div class="game-detail__desc">
+    <h2 class="game-detail__section-title">About</h2>
+    <p>{{ game.description }}</p>
+  </div>
+  {% endif %}
+
+  <!-- ── COMMENTS ────────────────────────────────────────────── -->
+  <div class="game-detail__comments">
+    <h2 class="game-detail__section-title">Comments ({{ comments|length }})</h2>
+
+    {% if session.get('user_id') %}
+    <form class="comment-form" method="post" action="{{ url_for('games.comment', slug=game.slug) }}">
+      <div class="comment-form__stars" id="ratingStars">
+        {% for i in range(1, 6) %}
+          <button type="button" class="star-btn" data-val="{{ i }}">★</button>
+        {% endfor %}
+      </div>
+      <input type="hidden" name="rating" id="ratingInput" value="">
+      <textarea class="comment-form__input" name="body" placeholder="Leave a comment…" rows="3" required></textarea>
+      <button class="auth-form__submit" type="submit" style="width:auto;padding:9px 28px;">Post</button>
+    </form>
+    {% else %}
+    <p class="auth-card__footer">
+      <a href="{{ url_for('auth.login') }}" class="auth-card__link">Sign in</a> to leave a comment.
+    </p>
+    {% endif %}
+
+    {% if comments %}
+      <div class="comment-list">
+        {% for c in comments %}
+        <div class="comment-item">
+          <div class="comment-item__head">
+            <span class="comment-item__author">{{ c.author.username }}</span>
+            {% if c.rating %}
+              <span class="comment-item__rating">{{ '★' * c.rating }}{{ '☆' * (5 - c.rating) }}</span>
+            {% endif %}
+            <span class="comment-item__date">{{ c.created_at.strftime('%b %d, %Y') }}</span>
+          </div>
+          <p class="comment-item__body">{{ c.body }}</p>
+        </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="empty-state__text" style="padding:20px 0">No comments yet. Be the first!</p>
+    {% endif %}
+  </div>
+
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Star rating picker
+const stars = document.querySelectorAll('.star-btn');
+const ratingInput = document.getElementById('ratingInput');
+if (stars.length) {
+  stars.forEach(btn => {
+    btn.addEventListener('mouseover', () => highlightStars(+btn.dataset.val));
+    btn.addEventListener('click', () => {
+      ratingInput.value = btn.dataset.val;
+      highlightStars(+btn.dataset.val, true);
+    });
+  });
+  document.getElementById('ratingStars').addEventListener('mouseleave', () => {
+    highlightStars(+ratingInput.value || 0, true);
+  });
+}
+function highlightStars(n, lock) {
+  stars.forEach((s, i) => {
+    s.classList.toggle('star-btn--on', i < n);
+  });
+}
+</script>
+{% endblock %}

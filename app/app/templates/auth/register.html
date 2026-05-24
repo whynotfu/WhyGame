@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block title %}Register — WhyGame{% endblock %}
+
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-card">
+
+    <div class="auth-card__header">
+      <h1 class="auth-card__title">Create account</h1>
+      <p class="auth-card__sub">Join WhyGame and start playing</p>
+    </div>
+
+    <form class="auth-form" method="post" action="{{ url_for('auth.register') }}">
+      <div class="auth-form__group">
+        <label class="auth-form__label" for="username">Username</label>
+        <input class="auth-form__input" type="text" id="username" name="username"
+               placeholder="coolplayer42" required minlength="3" maxlength="32"
+               value="{{ request.form.get('username', '') }}">
+      </div>
+
+      <div class="auth-form__group">
+        <label class="auth-form__label" for="email">Email</label>
+        <input class="auth-form__input" type="email" id="email" name="email"
+               placeholder="you@example.com" required
+               value="{{ request.form.get('email', '') }}">
+      </div>
+
+      <div class="auth-form__group">
+        <label class="auth-form__label" for="password">Password</label>
+        <input class="auth-form__input" type="password" id="password" name="password"
+               placeholder="••••••••" required minlength="6">
+      </div>
+
+      <button class="auth-form__submit" type="submit">Create account</button>
+    </form>
+
+    <p class="auth-card__footer">
+      Already have an account?
+      <a href="{{ url_for('auth.login') }}" class="auth-card__link">Sign in</a>
+    </p>
+
+  </div>
+</div>
+{% endblock %}

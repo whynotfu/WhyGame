@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% block title %}
+  {% if genre %}{{ genre }} Games{% elif q %}Search: {{ q }}{% else %}All Games{% endif %} — WhyGame
+{% endblock %}
+
+{% block content %}
+
+<div class="catalog-head">
+  <h1 class="catalog-head__title">
+    {% if q %}
+      Results for "<em>{{ q }}</em>"
+    {% elif genre %}
+      {{ genre }}
+    {% else %}
+      All Games
+    {% endif %}
+  </h1>
+
+  <div class="catalog-head__filters">
+    <a href="{{ url_for('games.catalog') }}{% if genre %}?genre={{ genre }}{% endif %}{% if q %}&q={{ q }}{% endif %}"
+       class="catalog-filter {% if sort != 'new' %}catalog-filter--active{% endif %}">Popular</a>
+    <a href="{{ url_for('games.catalog') }}?sort=new{% if genre %}&genre={{ genre }}{% endif %}{% if q %}&q={{ q }}{% endif %}"
+       class="catalog-filter {% if sort == 'new' %}catalog-filter--active{% endif %}">New</a>
+  </div>
+</div>
+
+{% if games %}
+  <div class="catalog-grid">
+    {% for game in games %}
+      <a href="{{ url_for('games.detail', slug=game.slug) }}" class="pcard">
+        <div class="pcard__thumb">
+          {% if game.thumbnail_url %}
+            <img src="{{ game.thumbnail_url }}" alt="{{ game.title }}">
+          {% else %}
+            <div style="width:100%;height:100%;background:{{ game.gradient if game.gradient else '#13214f' }};display:flex;align-items:center;justify-content:center;">
+              <svg viewBox="0 0 48 48" fill="none" width="38" height="38"><rect width="48" height="48" rx="8" fill="rgba(127,177,200,0.12)"/><path d="M18 32l8-12 6 8 4-5 6 9H6z" fill="rgba(127,177,200,0.25)"/></svg>
+            </div>
+          {% endif %}
+          <div class="pcard__overlay">▶</div>
+          <span class="pcard__plays">{{ game.plays }} plays</span>
+        </div>
+        <div class="pcard__body">
+          <span class="pcard__genre">{{ game.genre }}</span>
+          <span class="pcard__title">{{ game.title }}</span>
+          <span class="pcard__author">by {{ game.author.username if game.author else 'unknown' }}</span>
+        </div>
+      </a>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="empty-state">
+    <svg class="empty-state__icon" viewBox="0 0 48 48" fill="none">
+      <rect width="48" height="48" rx="10" fill="rgba(127,177,200,0.10)"/>
+      <path d="M14 34l8-12 6 8 4-5 6 9" stroke="rgba(127,177,200,0.4)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <p class="empty-state__text">
+      {% if q %}No games found for "{{ q }}"{% else %}No games here yet{% endif %}
+    </p>
+  </div>
+{% endif %}
+
+{% endblock %}
