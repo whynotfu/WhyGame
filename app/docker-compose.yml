@@ -9,6 +9,37 @@ services:
       - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U whygame"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  web:
+    build: .
+    environment:
+      DATABASE_URL: postgresql+psycopg2://whygame:whygame@db:5432/whygame
+      SECRET_KEY: dev-secret-change-me
+    volumes:
+      - ./storage:/app/storage
+      - ./app/static:/app/app/static
+      - ./migrations:/app/migrations
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./app/static:/app/app/static:ro
+      - ./storage:/app/storage:ro
+    depends_on:
+      - web
+    restart: unless-stopped
 
 volumes:
   pgdata:

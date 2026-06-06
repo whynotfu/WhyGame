@@ -4,10 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}WhyGame{% endblock %}</title>
+  {% block head_fonts %}
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=REM:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  {% endblock %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=12">
   {% block extra_head %}{% endblock %}
 </head>
 <body>
@@ -42,8 +44,18 @@
       <div class="navbar__user">
         {% if session.get('user_id') %}
           {% if session.get('role') in ('developer', 'admin') %}
-            <a href="#" class="navbar__tab">Publish</a>
+            <a href="{{ url_for('games.publish') }}" class="navbar__tab">Publish</a>
           {% endif %}
+          <a href="{{ url_for('notifications.index') }}" class="navbar__tab navbar__notif-btn" title="Notifications">
+            <svg viewBox="0 0 20 20" fill="none" width="17" height="17">
+              <path d="M10 2a6 6 0 0 0-6 6v3l-1.5 2.5h15L16 11V8a6 6 0 0 0-6-6z"
+                    stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+              <path d="M8.5 16a1.5 1.5 0 0 0 3 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            {% if unread_notifs > 0 %}
+              <span class="navbar__notif-badge">{{ unread_notifs if unread_notifs < 100 else '99+' }}</span>
+            {% endif %}
+          </a>
           <a href="{{ url_for('auth.logout') }}" class="navbar__tab">Logout</a>
         {% else %}
           <a href="{{ url_for('auth.login') }}"
@@ -56,33 +68,86 @@
     </div>
 
     <!-- аватар — рядом справа, тот же уровень -->
-    <a href="{{ url_for('auth.login') if not session.get('user_id') else '#' }}"
-       class="profile-avatar" title="{{ session.username if session.get('user_id') else 'Guest' }}">
-      <div class="profile-avatar__frame">
-        {% if session.get('user_id') and session.get('avatar_url') %}
-          <img src="{{ session.avatar_url }}" alt="avatar" class="profile-avatar__img">
-        {% else %}
-          <img src="{{ url_for('static', filename='img/default_avatar.svg') }}"
-               alt="avatar" class="profile-avatar__img">
-        {% endif %}
+    {% if session.get('user_id') %}
+      <div class="profile-avatar profile-avatar--loggedin">
+        <a href="{{ url_for('users.profile') }}" class="profile-avatar__frame" title="{{ session.get('username', '') }}">
+          {% if session.get('avatar_url') %}
+            <img src="{{ session.avatar_url }}" alt="avatar" class="profile-avatar__img">
+          {% else %}
+            <img src="{{ url_for('static', filename='img/default_avatar.svg') }}"
+                 alt="avatar" class="profile-avatar__img">
+          {% endif %}
+        </a>
+        <span class="profile-avatar__online"></span>
+        <div class="avatar-dropdown">
+          <a href="{{ url_for('users.profile') }}" class="avatar-dropdown__item">
+            <span class="avatar-dropdown__icon">◈</span> Profile
+          </a>
+          <a href="#" class="avatar-dropdown__item">
+            <span class="avatar-dropdown__icon">⚙</span> Settings
+          </a>
+          <hr class="avatar-dropdown__sep">
+          <a href="{{ url_for('auth.logout') }}" class="avatar-dropdown__item avatar-dropdown__item--danger">
+            <span class="avatar-dropdown__icon">→</span> Sign out
+          </a>
+        </div>
       </div>
-    </a>
+    {% else %}
+      <div class="profile-avatar profile-avatar--guest">
+        <div class="profile-avatar__frame profile-avatar__frame--guest">
+          <img src="{{ url_for('static', filename='img/default_avatar.svg') }}"
+               alt="avatar" class="profile-avatar__img profile-avatar__img--guest">
+          <div class="profile-avatar__lock">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="5" y="11" width="14" height="10" rx="2" fill="currentColor" opacity=".9"/>
+              <path d="M8 11V7a4 4 0 0 1 8 0v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </div>
+        </div>
+        <div class="avatar-dropdown">
+          <button onclick="openModal('login')" class="avatar-dropdown__item avatar-dropdown__item--btn">
+            <span class="avatar-dropdown__icon">→</span> Login
+          </button>
+          <button onclick="openModal('register')" class="avatar-dropdown__item avatar-dropdown__item--btn">
+            <span class="avatar-dropdown__icon">✦</span> Sign up
+          </button>
+        </div>
+      </div>
+    {% endif %}
 
   </header>
 
-  <!-- ── FLASH MESSAGES ─────────────────────────────────────────── -->
+  <!-- ── FLASH MESSAGES (fixed toasts) ───────────────────────────── -->
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
-      <div class="flash-container">
+      <div class="flash-container" id="flashContainer">
         {% for category, msg in messages %}
-          <div class="flash flash--{{ category }}">{{ msg }}</div>
+          <div class="flash flash--{{ category }}">
+            {% if category == 'success' %}
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.4"/>
+                <path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            {% elif category == 'error' %}
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.4"/>
+                <path d="M8 5v3.5M8 11h.01" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+              </svg>
+            {% else %}
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.4"/>
+                <path d="M8 7v4M8 5h.01" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+              </svg>
+            {% endif %}
+            {{ msg }}
+          </div>
         {% endfor %}
       </div>
     {% endif %}
   {% endwith %}
 
   <!-- ── LAYOUT ─────────────────────────────────────────────────── -->
-  <div class="layout">
+  <div class="layout {% block layout_class %}{% endblock %}">
 
     <!-- sidebar -->
     <aside class="sidebar">
@@ -128,7 +193,111 @@
     <span>© 2026 WhyGame — whynotfu</span>
   </footer>
 
-  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  <!-- ── PAGE LOADER ──────────────────────────────────────────── -->
+  <div class="page-loader" id="pageLoader">
+    <img src="{{ url_for('static', filename='img/loading.gif') }}" alt="Loading" class="page-loader__gif">
+  </div>
+
+  <!-- ── AUTH MODALS ───────────────────────────────────────────── -->
+  {% set flash_msgs = get_flashed_messages(with_categories=true) %}
+
+  <div class="auth-overlay" id="authOverlay" onclick="handleOverlayClick(event)">
+    <div class="auth-overlay__backdrop"></div>
+
+    <!-- LOGIN MODAL -->
+    <div class="auth-modal" id="modalLogin" role="dialog" aria-modal="true">
+      <button class="auth-modal__close" onclick="closeModal()" aria-label="Close">✕</button>
+
+      <div class="auth-card__header">
+        <h1 class="auth-card__title">Welcome back</h1>
+        <p class="auth-card__sub">Sign in to continue playing</p>
+      </div>
+
+      {% for cat, msg in flash_msgs %}
+        {% if cat == 'error' %}
+          <div class="auth-flash auth-flash--error">{{ msg }}</div>
+        {% endif %}
+      {% endfor %}
+
+      <form class="auth-form" method="post" action="{{ url_for('auth.login') }}">
+        <div class="auth-form__group">
+          <label class="auth-form__label" for="loginEmail">Email or username</label>
+          <input class="auth-form__input" type="text" id="loginEmail" name="email"
+                 placeholder="you@example.com or username" required>
+        </div>
+        <div class="auth-form__group">
+          <label class="auth-form__label" for="loginPassword">Password</label>
+          <input class="auth-form__input" type="password" id="loginPassword" name="password"
+                 placeholder="••••••••" required>
+        </div>
+        <button class="auth-form__submit" type="submit">Sign in</button>
+      </form>
+
+      <p class="auth-card__footer">
+        Don't have an account?
+        <button class="auth-card__link auth-card__link--btn" onclick="openModal('register')">Sign up</button>
+      </p>
+    </div>
+
+    <!-- REGISTER MODAL -->
+    <div class="auth-modal" id="modalRegister" role="dialog" aria-modal="true">
+      <button class="auth-modal__close" onclick="closeModal()" aria-label="Close">✕</button>
+
+      <div class="auth-card__header">
+        <h1 class="auth-card__title">Create account</h1>
+        <p class="auth-card__sub">Join WhyGame and start playing</p>
+      </div>
+
+      {% for cat, msg in flash_msgs %}
+        {% if cat == 'error' %}
+          <div class="auth-flash auth-flash--error">{{ msg }}</div>
+        {% endif %}
+      {% endfor %}
+
+      <form class="auth-form" method="post" action="{{ url_for('auth.register') }}">
+        <div class="auth-form__group">
+          <label class="auth-form__label" for="regUsername">Username</label>
+          <input class="auth-form__input" type="text" id="regUsername" name="username"
+                 placeholder="coolplayer42" required minlength="3" maxlength="32">
+        </div>
+        <div class="auth-form__group">
+          <label class="auth-form__label" for="regEmail">Email</label>
+          <input class="auth-form__input" type="email" id="regEmail" name="email"
+                 placeholder="you@example.com" required>
+        </div>
+        <div class="auth-form__group">
+          <label class="auth-form__label" for="regPassword">Password</label>
+          <input class="auth-form__input" type="password" id="regPassword" name="password"
+                 placeholder="••••••••" required minlength="6">
+        </div>
+        <button class="auth-form__submit" type="submit">Create account</button>
+      </form>
+
+      <p class="auth-card__footer">
+        Already have an account?
+        <button class="auth-card__link auth-card__link--btn" onclick="openModal('login')">Sign in</button>
+      </p>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/main.js') }}?v=12"></script>
   {% block extra_js %}{% endblock %}
+
+  <script>
+    {% set open_modal = request.args.get('modal') %}
+    {% if open_modal in ('login', 'register') %}
+      document.addEventListener('DOMContentLoaded', () => openModal('{{ open_modal }}'));
+    {% endif %}
+
+    /* ── Toast auto-dismiss ── */
+    document.querySelectorAll('.flash').forEach(el => {
+      const hide = () => {
+        el.classList.add('is-hiding');
+        el.addEventListener('transitionend', () => el.remove(), { once: true });
+      };
+      setTimeout(hide, 3500);
+      el.addEventListener('click', hide);
+    });
+  </script>
 </body>
 </html>

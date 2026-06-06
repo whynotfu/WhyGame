@@ -1,0 +1,275 @@
+{% extends 'base.html' %}
+{% block title %}{{ user.username }} — WhyGame{% endblock %}
+
+{% block extra_head %}
+<style>
+  .content { gap: 0 !important; padding: 0 !important; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+{%- set ava = user.avatar_url if user.avatar_url else url_for('static', filename='img/default_avatar.svg') -%}
+
+<!-- ═══ COVER PHOTO ══════════════════════════════════════════════════ -->
+<div class="fb-cover">
+  <div class="fb-cover__photo"></div>
+</div>
+
+<!-- ═══ PROFILE HEADER ══════════════════════════════════════════════ -->
+<div class="fb-profile-header">
+  <div class="fb-profile-header__inner">
+
+    <div class="fb-avatar-wrap">
+      <label class="fb-avatar-upload-label" title="Change avatar">
+        <div class="fb-avatar fb-avatar--{{ user.role }}"
+             style="background-image: url('{{ ava }}')"></div>
+        <div class="fb-avatar-upload-overlay">
+          <svg viewBox="0 0 24 24" fill="none" width="28" height="28">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"
+                  stroke="white" stroke-width="1.8" stroke-linejoin="round"/>
+            <circle cx="12" cy="13" r="4" stroke="white" stroke-width="1.8"/>
+          </svg>
+        </div>
+        <form id="avatarForm" method="post" action="{{ url_for('users.profile') }}"
+              enctype="multipart/form-data" style="display:none">
+          <input type="hidden" name="action" value="avatar">
+          <input type="file" name="avatar_file" id="avatarInput"
+                 accept=".jpg,.jpeg,.png,.webp,.gif">
+        </form>
+      </label>
+      <span class="fb-avatar__dot"></span>
+    </div>
+
+    <div class="fb-profile-info">
+      <div class="fb-profile-name-row">
+        <h1 class="fb-profile-name">{{ user.username }}</h1>
+        <span class="fb-role-badge fb-role-badge--{{ user.role }}">{{ user.role }}</span>
+      </div>
+      {% if user.bio %}
+        <p class="fb-profile-bio">{{ user.bio }}</p>
+      {% else %}
+        <p class="fb-profile-bio fb-profile-bio--empty">No bio yet...</p>
+      {% endif %}
+      <span class="fb-profile-since">Joined {{ user.created_at.strftime('%B %Y') }}</span>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══ MAIN CONTENT ════════════════════════════════════════════════ -->
+<div class="fb-main">
+
+  <!-- ── LEFT COLUMN ─────────────────────────────────────────────── -->
+  <aside class="fb-col fb-col--left">
+
+    <!-- Intro + inline bio -->
+    <div class="fb-card">
+      <h3 class="fb-card__title">Intro</h3>
+
+      <!-- Bio inline editor -->
+      <div class="bio-view" id="bioView">
+        {% if user.bio %}
+          <p class="bio-view__text">{{ user.bio }}</p>
+        {% else %}
+          <p class="bio-view__text bio-view__text--empty">Add a bio...</p>
+        {% endif %}
+        <button class="bio-edit-btn" id="bioEditBtn" title="Edit bio">
+          <svg viewBox="0 0 16 16" fill="none">
+            <path d="M11.06 2.06a1.5 1.5 0 0 1 2.12 2.12l-8.5 8.5a1 1 0 0 1-.46.26l-2.5.63.63-2.5a1 1 0 0 1 .26-.46l8.45-8.55z"
+                  stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+
+      <form class="bio-form" id="bioForm" method="post" action="{{ url_for('users.profile') }}" style="display:none;">
+        <input type="hidden" name="action" value="bio">
+        <textarea class="bio-form__textarea" name="bio"
+                  placeholder="Write something about yourself...">{{ user.bio or '' }}</textarea>
+        <div class="bio-form__actions">
+          <button type="button" class="bio-form__cancel" id="bioCancelBtn">Cancel</button>
+          <button type="submit" class="bio-form__save">Save</button>
+        </div>
+      </form>
+
+      <hr class="fb-sep">
+
+      <ul class="fb-about-list">
+        <li class="fb-about-item">
+          <svg viewBox="0 0 20 20" fill="none">
+            <path d="M10 10a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM3 18a7 7 0 0 1 14 0"
+                  stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          <span>{{ user.username }}</span>
+        </li>
+        <li class="fb-about-item">
+          <svg viewBox="0 0 20 20" fill="none">
+            <path d="M2.5 6.5A1.5 1.5 0 0 1 4 5h12a1.5 1.5 0 0 1 1.5 1.5v8A1.5 1.5 0 0 1 16 16H4a1.5 1.5 0 0 1-1.5-1.5v-8z"
+                  stroke="currentColor" stroke-width="1.5"/>
+            <path d="M2.5 8l7.5 5 7.5-5" stroke="currentColor" stroke-width="1.5"/>
+          </svg>
+          <span>{{ user.email }}</span>
+        </li>
+        <li class="fb-about-item">
+          <svg viewBox="0 0 20 20" fill="none">
+            <rect x="3" y="4" width="14" height="13" rx="2" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M3 8h14M7 2v3M13 2v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          <span>Joined {{ user.created_at.strftime('%B %d, %Y') }}</span>
+        </li>
+        <li class="fb-about-item">
+          <svg viewBox="0 0 20 20" fill="none">
+            <path d="M10 2L3 7v11h5v-5h4v5h5V7L10 2z"
+                  stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+          </svg>
+          <span class="fb-role-text fb-role-text--{{ user.role }}">{{ user.role | capitalize }}</span>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Stats -->
+    <div class="fb-card">
+      <h3 class="fb-card__title">Stats</h3>
+      <div class="pf-stats">
+        <div class="pf-stat">
+          <span class="pf-stat__value">{{ stats.comments }}</span>
+          <span class="pf-stat__label">Comments</span>
+        </div>
+        <div class="pf-stat">
+          <span class="pf-stat__value">{{ (user.created_at | string)[:4] }}</span>
+          <span class="pf-stat__label">Member since</span>
+        </div>
+        {% if user.is_developer %}
+        <div class="pf-stat">
+          <span class="pf-stat__value">{{ stats.games_published }}</span>
+          <span class="pf-stat__label">Games published</span>
+        </div>
+        {% endif %}
+        <div class="pf-stat">
+          <span class="pf-stat__value pf-stat__value--role pf-role-text--{{ user.role }}">{{ user.role | capitalize }}</span>
+          <span class="pf-stat__label">Role</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Apply for role -->
+    {% if user.role == 'player' %}
+    <div class="fb-card pf-apply-card">
+      <h3 class="fb-card__title">Join the team</h3>
+      <p class="pf-apply-card__desc">Want to do more on WhyGame? Apply for a role upgrade.</p>
+
+      <form method="post" action="{{ url_for('users.profile') }}">
+        <input type="hidden" name="action" value="apply">
+        <input type="hidden" name="role_request" value="moderator">
+        <button type="submit" class="pf-apply-btn pf-apply-btn--mod">
+          <svg viewBox="0 0 20 20" fill="none">
+            <path d="M10 2l1.5 4.5H16l-3.7 2.7 1.4 4.3L10 11 6.3 13.5l1.4-4.3L4 6.5h4.5L10 2z"
+                  stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+          </svg>
+          Apply as Moderator
+        </button>
+      </form>
+
+      <form method="post" action="{{ url_for('users.profile') }}">
+        <input type="hidden" name="action" value="apply">
+        <input type="hidden" name="role_request" value="developer">
+        <button type="submit" class="pf-apply-btn pf-apply-btn--dev">
+          <svg viewBox="0 0 20 20" fill="none">
+            <path d="M7 8l-4 4 4 4M13 8l4 4-4 4M11 4l-2 12"
+                  stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Become a Developer
+        </button>
+      </form>
+    </div>
+    {% endif %}
+
+  </aside>
+
+  <!-- ── RIGHT COLUMN ────────────────────────────────────────────── -->
+  <section class="fb-col fb-col--right">
+
+    <!-- Edit Profile -->
+    <div class="fb-card">
+      <h3 class="fb-card__title">Edit Profile</h3>
+      <form method="post" action="{{ url_for('users.profile') }}" class="fb-form">
+        <input type="hidden" name="action" value="info">
+
+        <div class="fb-form__row">
+          <div class="fb-form__field">
+            <label class="fb-form__label">Username</label>
+            <input class="fb-form__input" type="text" name="username"
+                   value="{{ user.username }}" minlength="3" maxlength="32" required>
+          </div>
+          <div class="fb-form__field">
+            <label class="fb-form__label">Email</label>
+            <input class="fb-form__input" type="email" name="email"
+                   value="{{ user.email }}" required>
+          </div>
+        </div>
+
+        <div class="fb-form__actions">
+          <button class="fb-btn fb-btn--primary" type="submit">Save changes</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Danger zone -->
+    <div class="fb-card fb-card--danger">
+      <h3 class="fb-card__title">Danger Zone</h3>
+      <p class="fb-danger-desc">Once you delete your account, there is no going back.</p>
+      <form method="post" action="{{ url_for('users.delete_account') }}"
+            onsubmit="return confirm('Delete your account permanently?')">
+        <button class="fb-btn fb-btn--danger" type="submit">Delete account</button>
+      </form>
+    </div>
+
+    <!-- Recently played -->
+    <div class="fb-card">
+      <h3 class="fb-card__title">Recently Played</h3>
+      <div class="pf-recent">
+        <div class="pf-recent__empty">
+          <svg viewBox="0 0 48 48" fill="none">
+            <rect x="6" y="14" width="36" height="24" rx="4" stroke="currentColor" stroke-width="2"/>
+            <path d="M18 26h4m-2-2v4M28 26h4M16 14V10M32 14V10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <span>No games played yet</span>
+          <a href="{{ url_for('games.catalog') }}" class="pf-recent__cta">Browse games →</a>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Avatar upload: click label → open file picker → auto-submit
+  const avatarInput = document.getElementById('avatarInput');
+  const avatarForm  = document.getElementById('avatarForm');
+  if (avatarInput) {
+    avatarInput.addEventListener('change', () => {
+      if (avatarInput.files.length) avatarForm.submit();
+    });
+  }
+
+  const bioView   = document.getElementById('bioView');
+  const bioForm   = document.getElementById('bioForm');
+  const bioEditBtn   = document.getElementById('bioEditBtn');
+  const bioCancelBtn = document.getElementById('bioCancelBtn');
+
+  bioEditBtn.addEventListener('click', () => {
+    bioView.style.display = 'none';
+    bioForm.style.display = 'flex';
+    bioForm.querySelector('textarea').focus();
+  });
+
+  bioCancelBtn.addEventListener('click', () => {
+    bioView.style.display = 'flex';
+    bioForm.style.display = 'none';
+  });
+</script>
+{% endblock %}

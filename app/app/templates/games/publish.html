@@ -1,0 +1,478 @@
+{% extends 'base.html' %}
+{% block title %}{% if game %}Edit {{ game.title }}{% else %}Publish Game{% endif %} — WhyGame{% endblock %}
+
+{% block extra_head %}
+<style>
+  .sidebar { display: none !important; }
+  .content  { margin-left: 0 !important; padding: 0 !important; gap: 0 !important; }
+</style>
+{% endblock %}
+
+{% block content %}
+{%- set sel_genres = game_genres if game_genres is defined else [] -%}
+{%- set cur_color  = game.bg_color if game and game.bg_color else '#0d1a45' -%}
+
+<div class="studio">
+
+  <!-- ── LEFT: FORM ────────────────────────────────────────────────── -->
+  <div class="studio__form-col">
+
+    <div class="studio__header">
+      <div class="studio__header-left">
+        <a href="{{ url_for('games.catalog') }}" class="studio__back">
+          <svg viewBox="0 0 16 16" fill="none" width="14" height="14">
+            <path d="M10 3L5 8l5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Games
+        </a>
+        <h1 class="studio__title">
+          {% if game %}Edit Game{% else %}Publish a Game{% endif %}
+        </h1>
+      </div>
+
+      {% if game %}
+      <form method="post" action="{{ url_for('games.delete', slug=game.slug) }}"
+            onsubmit="return confirm('Delete this game? This cannot be undone.')">
+        <button class="studio__delete-btn" type="submit">
+          <svg viewBox="0 0 16 16" fill="none" width="14" height="14">
+            <path d="M3 4h10M6 4V3h4v1M5 4l.5 9h5L11 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Delete
+        </button>
+      </form>
+      {% endif %}
+    </div>
+
+    <form method="post"
+          action="{{ url_for('games.edit', slug=game.slug) if game else url_for('games.publish') }}"
+          class="studio__form"
+          enctype="multipart/form-data"
+          id="studioForm">
+
+      <!-- Title -->
+      <div class="studio__field">
+        <label class="studio__label">Title <span class="studio__required">*</span></label>
+        <input class="studio__input" type="text" name="title" id="fieldTitle"
+               value="{{ game.title if game else '' }}"
+               placeholder="My Awesome Game" required maxlength="128"
+               oninput="updatePreview()">
+      </div>
+
+      <!-- Genre (multiple checkboxes) -->
+      <div class="studio__field">
+        <label class="studio__label">Genre <span class="studio__hint">select multiple</span></label>
+        <div class="studio__genre-grid">
+          {% for g in genres %}
+          <label class="studio__genre-chip">
+            <input type="checkbox" name="genre" value="{{ g }}"
+                   {% if g in sel_genres %}checked{% endif %}
+                   onchange="updateGenrePreview()">
+            <span>{{ g }}</span>
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Description -->
+      <div class="studio__field">
+        <label class="studio__label">Description</label>
+        <textarea class="studio__input studio__textarea" name="description"
+                  placeholder="Tell players what your game is about…"
+                  rows="4" id="fieldDesc"
+                  oninput="updatePreview()">{{ game.description if game else '' }}</textarea>
+      </div>
+
+      <!-- Thumbnail: URL or file upload -->
+      <div class="studio__field">
+        <label class="studio__label">Thumbnail <span class="studio__hint">jpg · png · webp · gif</span></label>
+        <div class="studio__tab-row">
+          <button type="button" class="studio__tab studio__tab--active" id="thumbTabUrl" onclick="switchThumbTab('url')">URL</button>
+          <button type="button" class="studio__tab" id="thumbTabFile" onclick="switchThumbTab('file')">Upload</button>
+        </div>
+        <div id="thumbUrlPane">
+          <input class="studio__input" type="url" name="thumbnail_url" id="fieldThumb"
+                 value="{{ game.thumbnail_url if game and not (game.thumbnail_url or '').startswith('/storage/') else '' }}"
+                 placeholder="https://example.com/cover.png"
+                 oninput="updatePreview()">
+        </div>
+        <div id="thumbFilePane" style="display:none">
+          <label class="studio__upload-zone" id="thumbUploadZone">
+            <input type="file" name="thumbnail_file" id="fieldThumbFile"
+                   accept=".jpg,.jpeg,.png,.webp,.gif"
+                   onchange="onThumbFileChange(this)">
+            <div class="studio__upload-inner">
+              <svg viewBox="0 0 24 24" fill="none" width="28" height="28">
+                <rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" stroke-width="1.5"/>
+                <path d="M3 15l5-5 4 4 3-3 6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor"/>
+              </svg>
+              <span id="thumbUploadLabel">
+                {% if game and game.thumbnail_url and game.thumbnail_url.startswith('/storage/') %}
+                  {{ game.thumbnail_url.split('/')[-1] }} — click to replace
+                {% else %}
+                  Click to upload image
+                {% endif %}
+              </span>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <!-- Background color -->
+      <div class="studio__field">
+        <label class="studio__label">Game card color</label>
+        <div class="studio__color-row">
+          <input type="color" name="bg_color" id="fieldColor"
+                 value="{{ cur_color }}"
+                 class="studio__color-picker"
+                 oninput="applyColor(this.value)">
+          <span class="studio__color-value" id="colorHex">{{ cur_color }}</span>
+          <span class="studio__hint">text colors auto-adapt for readability</span>
+        </div>
+        <div class="studio__color-swatches">
+          {% for sw in ['#0d1a45','#1a0d3a','#0d2d1a','#2d0d0d','#1a1a0d','#0d2233','#2d1a0d','#111111'] %}
+          <button type="button" class="studio__swatch"
+                  style="background:{{ sw }}"
+                  onclick="setColor('{{ sw }}')"></button>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Game ZIP upload -->
+      <div class="studio__field">
+        <label class="studio__label">Game file
+          <span class="studio__hint">.zip with index.html inside (Unity WebGL, etc.)</span>
+        </label>
+        <label class="studio__upload-zone" id="uploadZone">
+          <input type="file" name="game_zip" id="fieldZip"
+                 accept=".zip,.rar,.7z"
+                 onchange="onZipChange(this)">
+          <div class="studio__upload-inner">
+            <svg viewBox="0 0 24 24" fill="none" width="28" height="28">
+              <path d="M12 15V3M12 3l-4 4M12 3l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M3 17v1a3 3 0 0 0 3 3h12a3 3 0 0 0 3-3v-1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            <span id="zipLabel">
+              {% if game and game.iframe_url and game.iframe_url.startswith('/storage/') %}
+                Build uploaded — drop new ZIP to replace
+              {% else %}
+                Drop ZIP here or click to upload
+              {% endif %}
+            </span>
+            <span class="studio__hint" style="text-align:center">
+              Server extracts the ZIP and serves index.html automatically
+            </span>
+          </div>
+        </label>
+
+        {% if game and game.iframe_url and game.iframe_url.startswith('/storage/') %}
+        <p class="studio__hint-block" style="color:rgba(11,21,56,0.55);margin-top:4px">
+          ✓ Build ready: <code style="font-size:0.75rem">{{ game.iframe_url }}</code>
+        </p>
+        {% endif %}
+
+        <div class="studio__or-row"><span>or embed external URL</span></div>
+        <input class="studio__input" type="url" name="iframe_url"
+               value="{{ game.iframe_url if game and game.iframe_url and not game.iframe_url.startswith('/storage/') else '' }}"
+               placeholder="https://itch.io/embed-upload/… · GameJolt · hosted WebGL">
+      </div>
+
+      <!-- Social links -->
+      <div class="studio__field">
+        <label class="studio__label">Social links <span class="studio__hint">all optional</span></label>
+        <div class="studio__socials">
+          <div class="studio__social-row">
+            <span class="studio__social-icon studio__social-icon--tg">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.17 13.267l-2.96-.924c-.64-.203-.657-.64.136-.954l11.57-4.461c.537-.194 1.006.131.978.293z"/></svg>
+            </span>
+            <input class="studio__input studio__social-input" type="url" name="social_telegram"
+                   value="{{ game.social_telegram or '' if game else '' }}"
+                   placeholder="https://t.me/yourchannel">
+          </div>
+          <div class="studio__social-row">
+            <span class="studio__social-icon studio__social-icon--yt">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M23.495 6.205a3.007 3.007 0 0 0-2.088-2.088c-1.87-.501-9.396-.501-9.396-.501s-7.507-.01-9.396.501A3.007 3.007 0 0 0 .527 6.205a31.247 31.247 0 0 0-.522 5.805 31.247 31.247 0 0 0 .522 5.783 3.007 3.007 0 0 0 2.088 2.088c1.868.502 9.396.502 9.396.502s7.506 0 9.396-.502a3.007 3.007 0 0 0 2.088-2.088 31.247 31.247 0 0 0 .5-5.783 31.247 31.247 0 0 0-.5-5.805zM9.609 15.601V8.408l6.264 3.602z"/></svg>
+            </span>
+            <input class="studio__input studio__social-input" type="url" name="social_youtube"
+                   value="{{ game.social_youtube or '' if game else '' }}"
+                   placeholder="https://youtube.com/@yourchannel">
+          </div>
+          <div class="studio__social-row">
+            <span class="studio__social-icon studio__social-icon--ig">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/></svg>
+            </span>
+            <input class="studio__input studio__social-input" type="url" name="social_instagram"
+                   value="{{ game.social_instagram or '' if game else '' }}"
+                   placeholder="https://instagram.com/yourpage">
+          </div>
+          <div class="studio__social-row">
+            <span class="studio__social-icon studio__social-icon--tw">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+            </span>
+            <input class="studio__input studio__social-input" type="url" name="social_twitter"
+                   value="{{ game.social_twitter or '' if game else '' }}"
+                   placeholder="https://x.com/yourhandle">
+          </div>
+          <div class="studio__social-row studio__social-row--custom">
+            <input class="studio__input" type="text" name="social_custom_label"
+                   value="{{ game.social_custom_label or '' if game else '' }}"
+                   placeholder="Label (e.g. Discord)" style="flex:0 0 130px">
+            <input class="studio__input studio__social-input" type="url" name="social_custom_url"
+                   value="{{ game.social_custom_url or '' if game else '' }}"
+                   placeholder="https://…">
+          </div>
+        </div>
+      </div>
+
+      <!-- Published toggle -->
+      <div class="studio__field studio__field--row">
+        <label class="studio__toggle">
+          <input type="checkbox" name="is_published"
+                 {% if game and game.is_published %}checked{% endif %}>
+          <span class="studio__toggle__track"></span>
+        </label>
+        <div>
+          <span class="studio__toggle__label">Publish immediately</span>
+          <p class="studio__hint-block">Unchecked = draft, only you can see it</p>
+        </div>
+      </div>
+
+      <button class="studio__submit" type="submit">
+        <svg viewBox="0 0 16 16" fill="none" width="15" height="15">
+          <path d="M13.5 8.5V13a.5.5 0 0 1-.5.5H3a.5.5 0 0 1-.5-.5V3a.5.5 0 0 1 .5-.5h4.5"
+                stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          <path d="M9 2.5h4.5V7M13.5 2.5L7 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        {% if game %}Save changes{% else %}Publish game{% endif %}
+      </button>
+
+    </form>
+  </div>
+
+  <!-- ── RIGHT: PREVIEW ───────────────────────────────────────────── -->
+  <div class="studio__preview-col">
+    <div class="studio__preview-label">Live Preview</div>
+
+    <!-- large thumbnail -->
+    <div class="studio__preview-thumb" id="previewThumbWrap">
+      <img id="previewImg"
+           src="{{ game.thumbnail_url if game and game.thumbnail_url else '' }}"
+           alt="" class="studio__preview-thumb-img"
+           style="{{ '' if game and game.thumbnail_url else 'display:none' }}">
+
+      <div class="studio__preview-thumb-placeholder" id="previewPlaceholder"
+           style="{{ 'display:none' if game and game.thumbnail_url else '' }}">
+        <svg viewBox="0 0 64 64" fill="none">
+          <rect width="64" height="64" rx="10" fill="rgba(255,255,255,0.06)"/>
+          <path d="M8 48l14-20 10 13 7-9 11 16H8z" fill="rgba(255,255,255,0.15)"/>
+          <circle cx="44" cy="20" r="6" fill="rgba(255,255,255,0.15)"/>
+        </svg>
+        <span id="phText">Add a thumbnail URL to preview</span>
+      </div>
+
+      <div class="studio__preview-play">
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <circle cx="12" cy="12" r="11" fill="rgba(0,0,0,0.4)"/>
+          <path d="M10 8.5l6 3.5-6 3.5V8.5z" fill="white"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- game info -->
+    <div class="studio__preview-info" id="previewInfo">
+      <div class="studio__preview-genres" id="previewGenres">
+        <span class="studio__preview-genre">No genre</span>
+      </div>
+      <h2 class="studio__preview-title" id="previewTitle">
+        {{ game.title if game else 'Game title' }}
+      </h2>
+      <span class="studio__preview-author" id="previewAuthor">
+        by {{ session.get('username', 'you') }}
+      </span>
+      <hr class="studio__preview-sep">
+      <p class="studio__preview-desc" id="previewDesc">
+        {{ game.description if game and game.description else 'Description will appear here…' }}
+      </p>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ── Color utilities ──────────────────────────────────────────────────────────
+function hexToRgb(hex) {
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return {r, g, b};
+}
+function luminance({r, g, b}) {
+  const [rs, gs, bs] = [r,g,b].map(v => {
+    v /= 255;
+    return v <= 0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055, 2.4);
+  });
+  return 0.2126*rs + 0.7152*gs + 0.0722*bs;
+}
+function lighten(hex, amount) {
+  const {r,g,b} = hexToRgb(hex);
+  const cl = v => Math.min(255, Math.round(v + (255-v)*amount));
+  return '#'+[cl(r),cl(g),cl(b)].map(v=>v.toString(16).padStart(2,'0')).join('');
+}
+function darken(hex, amount) {
+  const {r,g,b} = hexToRgb(hex);
+  const dk = v => Math.max(0, Math.round(v*(1-amount)));
+  return '#'+[dk(r),dk(g),dk(b)].map(v=>v.toString(16).padStart(2,'0')).join('');
+}
+
+function applyColor(hex) {
+  document.getElementById('colorHex').textContent = hex;
+  document.getElementById('fieldColor').value = hex;
+
+  const lum    = luminance(hexToRgb(hex));
+  const isDark = lum < 0.35;
+
+  const textPrimary   = isDark ? '#ffffff'               : darken(hex, 0.78);
+  const textSecondary = isDark ? 'rgba(255,255,255,0.62)': darken(hex, 0.52);
+  const textMuted     = isDark ? 'rgba(255,255,255,0.38)': darken(hex, 0.36);
+  const sepColor      = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
+
+  // apply to whole right column
+  const col = document.querySelector('.studio__preview-col');
+  col.style.background = hex;
+
+  // label bar
+  const lbl = document.querySelector('.studio__preview-label');
+  lbl.style.color = isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)';
+  lbl.style.borderBottomColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
+
+  // info section
+  const info = document.getElementById('previewInfo');
+  info.style.background = hex;
+
+  document.getElementById('previewTitle').style.color  = textPrimary;
+  document.getElementById('previewAuthor').style.color = textSecondary;
+  document.getElementById('previewDesc').style.color   = textMuted;
+  document.querySelector('.studio__preview-sep').style.borderTopColor = sepColor;
+
+  // genre chips inside preview
+  document.querySelectorAll('.studio__preview-genre').forEach(el => {
+    el.style.background  = isDark ? 'rgba(255,255,255,0.1)'  : 'rgba(0,0,0,0.08)';
+    el.style.borderColor = isDark ? 'rgba(255,255,255,0.2)'  : 'rgba(0,0,0,0.15)';
+    el.style.color       = isDark ? 'rgba(255,255,255,0.85)' : darken(hex, 0.65);
+  });
+
+  // thumbnail bg tint
+  document.getElementById('previewThumbWrap').style.background = darken(hex, 0.35);
+
+  // placeholder text
+  const ph = document.getElementById('phText');
+  if (ph) ph.style.color = isDark ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.25)';
+}
+
+function setColor(hex) {
+  applyColor(hex);
+}
+
+// ── Preview updates ──────────────────────────────────────────────────────────
+function updatePreview() {
+  const title = document.getElementById('fieldTitle').value.trim();
+  document.getElementById('previewTitle').textContent = title || 'Game title';
+
+  const desc = document.getElementById('fieldDesc').value.trim();
+  document.getElementById('previewDesc').textContent = desc || 'Description will appear here…';
+
+  const thumb = document.getElementById('fieldThumb').value.trim();
+  const img   = document.getElementById('previewImg');
+  const ph    = document.getElementById('previewPlaceholder');
+  if (thumb) {
+    img.src = thumb;
+    img.style.display = 'block';
+    ph.style.display  = 'none';
+  } else {
+    img.style.display = 'none';
+    ph.style.display  = 'flex';
+  }
+}
+
+function updateGenrePreview() {
+  const checked = [...document.querySelectorAll('input[name="genre"]:checked')]
+    .map(el => el.value);
+  const container = document.getElementById('previewGenres');
+  if (checked.length === 0) {
+    container.innerHTML = '<span class="studio__preview-genre">No genre</span>';
+  } else {
+    container.innerHTML = checked
+      .map(g => `<span class="studio__preview-genre">${g}</span>`)
+      .join('');
+  }
+  // re-apply colors to newly created chips
+  applyColor(document.getElementById('fieldColor').value);
+}
+
+// ── Thumbnail tab switcher ────────────────────────────────────────────────────
+function switchThumbTab(tab) {
+  const urlPane  = document.getElementById('thumbUrlPane');
+  const filePane = document.getElementById('thumbFilePane');
+  const tabUrl   = document.getElementById('thumbTabUrl');
+  const tabFile  = document.getElementById('thumbTabFile');
+  if (tab === 'url') {
+    urlPane.style.display  = '';
+    filePane.style.display = 'none';
+    tabUrl.classList.add('studio__tab--active');
+    tabFile.classList.remove('studio__tab--active');
+  } else {
+    urlPane.style.display  = 'none';
+    filePane.style.display = '';
+    tabFile.classList.add('studio__tab--active');
+    tabUrl.classList.remove('studio__tab--active');
+  }
+}
+
+function onThumbFileChange(input) {
+  const file = input.files[0];
+  document.getElementById('thumbUploadLabel').textContent = file ? file.name : 'Click to upload image';
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = document.getElementById('previewImg');
+      const ph  = document.getElementById('previewPlaceholder');
+      img.src = e.target.result;
+      img.style.display = 'block';
+      ph.style.display  = 'none';
+    };
+    reader.readAsDataURL(file);
+  }
+}
+
+// ── ZIP upload label ─────────────────────────────────────────────────────────
+function onZipChange(input) {
+  const label = document.getElementById('zipLabel');
+  if (input.files[0]) {
+    label.textContent = input.files[0].name + ' — will be extracted on upload';
+  } else {
+    label.textContent = 'Drop ZIP here or click to upload';
+  }
+}
+
+// Drag & drop on zone
+const zone = document.getElementById('uploadZone');
+zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('studio__upload-zone--over'); });
+zone.addEventListener('dragleave', () => zone.classList.remove('studio__upload-zone--over'));
+zone.addEventListener('drop', e => {
+  e.preventDefault();
+  zone.classList.remove('studio__upload-zone--over');
+  const file = e.dataTransfer.files[0];
+  if (file) {
+    document.getElementById('fieldFile').files = e.dataTransfer.files;
+    document.getElementById('uploadLabel').textContent = file.name;
+  }
+});
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+applyColor('{{ cur_color }}');
+updateGenrePreview();
+updatePreview();
+</script>
+{% endblock %}

@@ -28,9 +28,14 @@ instance/
 *.db
 
 # ── User uploads / game builds ───────────────────────────────────
-App/app/static/uploads/
+app/storage/
+App/storage/
 storage/
 game_builds/
+
+# ── Docker ────────────────────────────────────────────────────────
+docker-compose.override.yml
+.dockerignore
 
 # ── IDE / OS ──────────────────────────────────────────────────────
 .vscode/
