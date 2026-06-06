@@ -12,6 +12,7 @@ class User(db.Model):
     role = db.Column(db.String(20), default='player')  # guest, player, developer, admin
     avatar_url = db.Column(db.String(256))
     bio = db.Column(db.Text)
+    is_public = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     games = db.relationship('Game', backref='author', lazy='dynamic')

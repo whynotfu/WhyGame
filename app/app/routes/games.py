@@ -110,6 +110,62 @@ def parse_socials(form):
     }
 
 
+# ── My Games ───────────────────────────────────────────────────────────────────
+@bp.route('/my')
+@role_required('developer', 'admin')
+def my_games():
+    games = Game.query.filter_by(author_id=session['user_id'])\
+        .order_by(Game.created_at.desc()).all()
+    return render_template('games/my_games.html', games=games)
+
+
+# ── Stats ───────────────────────────────────────────────────────────────────────
+@bp.route('/stats')
+@role_required('developer', 'admin')
+def stats():
+    from sqlalchemy import func
+    games = Game.query.filter_by(author_id=session['user_id'])\
+        .order_by(Game.plays.desc()).all()
+    game_ids = [g.id for g in games]
+
+    # Rating distribution (1–5) across all developer's games
+    rating_dist = {i: 0 for i in range(1, 6)}
+    if game_ids:
+        rows = db.session.query(Comment.rating, func.count(Comment.id))\
+            .filter(Comment.game_id.in_(game_ids), Comment.rating.isnot(None))\
+            .group_by(Comment.rating).all()
+        for r, cnt in rows:
+            rating_dist[r] = cnt
+
+    # Overall avg rating
+    avg_rating = None
+    if game_ids:
+        res = db.session.query(func.avg(Comment.rating))\
+            .filter(Comment.game_id.in_(game_ids), Comment.rating.isnot(None)).scalar()
+        avg_rating = round(float(res), 1) if res else None
+
+    total_plays    = sum(g.plays for g in games)
+    total_comments = sum(g.comment_count for g in games)
+    published      = sum(1 for g in games if g.is_published)
+
+    # Chart data: top 10 by plays
+    top = games[:10]
+    chart_labels = [g.title for g in top]
+    chart_plays  = [g.plays for g in top]
+
+    return render_template('games/stats.html',
+        games=games,
+        total_plays=total_plays,
+        total_comments=total_comments,
+        published_count=published,
+        draft_count=len(games) - published,
+        avg_rating=avg_rating,
+        rating_dist=rating_dist,
+        chart_labels=chart_labels,
+        chart_plays=chart_plays,
+    )
+
+
 # ── READ: catalog ──────────────────────────────────────────────────────────────
 @bp.route('/')
 def catalog():
@@ -141,6 +197,17 @@ def detail(slug):
         game = Game.query.filter_by(slug=slug, is_published=True).first_or_404()
 
     game.plays += 1
+
+    # track per-user play history (upsert: update played_at if already exists)
+    if uid:
+        from datetime import datetime
+        from app.models.play_history import PlayHistory
+        ph = PlayHistory.query.filter_by(user_id=uid, game_id=game.id).first()
+        if ph:
+            ph.played_at = datetime.utcnow()
+        else:
+            db.session.add(PlayHistory(user_id=uid, game_id=game.id))
+
     db.session.commit()
     comments = Comment.query.filter_by(game_id=game.id).order_by(Comment.created_at.desc()).all()
     genres = [g.strip() for g in (game.genre or '').split(',') if g.strip()]

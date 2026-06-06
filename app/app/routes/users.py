@@ -115,11 +115,91 @@ def profile():
 
         return redirect(url_for('users.profile'))
 
+    from app.models.play_history import PlayHistory
+    recently_played = (
+        PlayHistory.query
+        .filter_by(user_id=user.id)
+        .order_by(PlayHistory.played_at.desc())
+        .limit(6)
+        .all()
+    )
     stats = {
         'comments': user.comments.count(),
         'games_published': user.games.filter_by(is_published=True).count() if user.is_developer else 0,
     }
-    return render_template('profile.html', user=user, stats=stats)
+    return render_template('profile.html', user=user, stats=stats,
+                           recently_played=recently_played)
+
+
+@bp.route('/settings', methods=['GET', 'POST'])
+@login_required
+def settings():
+    user = User.query.get(session['user_id'])
+
+    if request.method == 'POST':
+        action = request.form.get('action')
+
+        if action == 'username':
+            username = request.form.get('username', '').strip()
+            if not username:
+                flash('Username cannot be empty', 'error')
+            elif username == user.username:
+                flash('That is already your username', 'info')
+            elif User.query.filter_by(username=username).first():
+                flash('Username already taken', 'error')
+            else:
+                user.username = username
+                session['username'] = username
+                db.session.commit()
+                flash('Username updated', 'success')
+
+        elif action == 'email':
+            email = request.form.get('email', '').strip()
+            if not email:
+                flash('Email cannot be empty', 'error')
+            elif email == user.email:
+                flash('That is already your email', 'info')
+            elif User.query.filter_by(email=email).first():
+                flash('Email already in use', 'error')
+            else:
+                user.email = email
+                db.session.commit()
+                flash('Email updated', 'success')
+
+        elif action == 'password':
+            current = request.form.get('current_password', '')
+            new_pw  = request.form.get('new_password', '')
+            confirm = request.form.get('confirm_password', '')
+            if not user.check_password(current):
+                flash('Current password is incorrect', 'error')
+            elif len(new_pw) < 6:
+                flash('New password must be at least 6 characters', 'error')
+            elif new_pw != confirm:
+                flash('Passwords do not match', 'error')
+            else:
+                user.set_password(new_pw)
+                db.session.commit()
+                flash('Password changed', 'success')
+
+        elif action == 'privacy':
+            user.is_public = 'is_public' in request.form
+            db.session.commit()
+            flash('Privacy setting saved', 'success')
+
+        elif action == 'delete':
+            confirm_text = request.form.get('confirm_text', '').strip()
+            if confirm_text != user.username:
+                flash('Type your username exactly to confirm deletion', 'error')
+            else:
+                db.session.delete(user)
+                db.session.commit()
+                session.clear()
+                flash('Account deleted', 'success')
+                return redirect(url_for('main.index'))
+
+        return redirect(url_for('users.settings'))
+
+    return render_template('settings.html', user=user)
 
 
 @bp.route('/profile/delete', methods=['POST'])

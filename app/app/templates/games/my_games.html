@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+{% block title %}My Games — WhyGame{% endblock %}
+
+{% block content %}
+
+<div class="mygames-header">
+  <div>
+    <h1 class="mygames-header__title">My Games</h1>
+    <span class="mygames-header__sub">{{ games|length }} game{{ 's' if games|length != 1 }}</span>
+  </div>
+  <div style="display:flex;gap:8px">
+    <a href="{{ url_for('games.stats') }}" class="fb-btn fb-btn--secondary">Statistics</a>
+    <a href="{{ url_for('games.publish') }}" class="fb-btn fb-btn--primary">+ New Game</a>
+  </div>
+</div>
+
+{% if games %}
+  <div class="mygames-list">
+    {% for game in games %}
+    {%- set bg = game.bg_color or '#0B1538' -%}
+    <div class="mgcard">
+
+      <!-- Thumb -->
+      <a href="{{ url_for('games.detail', slug=game.slug) }}" class="mgcard__thumb"
+         style="background:{{ bg }}">
+        {% if game.thumbnail_url %}
+          <img src="{{ game.thumbnail_url }}" alt="{{ game.title }}">
+        {% else %}
+          <svg viewBox="0 0 48 48" fill="none" width="32" height="32">
+            <path d="M8 36l12-16 8 10 6-8 14 14H8z" fill="rgba(255,255,255,0.15)"/>
+            <circle cx="34" cy="16" r="5" fill="rgba(255,255,255,0.15)"/>
+          </svg>
+        {% endif %}
+      </a>
+
+      <!-- Info -->
+      <div class="mgcard__info">
+        <div class="mgcard__topline">
+          <a href="{{ url_for('games.detail', slug=game.slug) }}" class="mgcard__title">
+            {{ game.title }}
+          </a>
+          {% if game.is_published %}
+            <span class="mgcard__badge mgcard__badge--live">Published</span>
+          {% else %}
+            <span class="mgcard__badge mgcard__badge--draft">Draft</span>
+          {% endif %}
+        </div>
+
+        <div class="mgcard__meta">
+          {% if game.first_genre %}
+            <span class="mgcard__genre">{{ game.first_genre }}</span>
+          {% endif %}
+          <span class="mgcard__stat">▶ {{ game.plays }}</span>
+          {% if game.avg_rating %}
+            <span class="mgcard__stat mgcard__stat--rating">★ {{ "%.1f"|format(game.avg_rating) }}</span>
+          {% endif %}
+          <span class="mgcard__stat">💬 {{ game.comment_count }}</span>
+          <span class="mgcard__date">{{ game.created_at.strftime('%d %b %Y') }}</span>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="mgcard__actions">
+        <a href="{{ url_for('games.edit', slug=game.slug) }}"
+           class="fb-btn fb-btn--secondary mgcard__btn">Edit</a>
+
+        <form method="post" action="{{ url_for('games.delete', slug=game.slug) }}"
+              onsubmit="return confirm('Delete «{{ game.title }}»? This cannot be undone.')">
+          <button type="submit" class="fb-btn fb-btn--danger mgcard__btn">Delete</button>
+        </form>
+      </div>
+
+    </div>
+    {% endfor %}
+  </div>
+
+{% else %}
+  <div class="empty-state">
+    <svg class="empty-state__icon" viewBox="0 0 48 48" fill="none">
+      <rect width="48" height="48" rx="10" fill="rgba(127,177,200,0.10)"/>
+      <path d="M16 24h16M24 16v16" stroke="rgba(127,177,200,0.5)" stroke-width="2.5" stroke-linecap="round"/>
+    </svg>
+    <p class="empty-state__text">You haven't published any games yet.</p>
+    <a href="{{ url_for('games.publish') }}" class="fb-btn fb-btn--primary" style="margin-top:12px">
+      Publish your first game
+    </a>
+  </div>
+{% endif %}
+
+{% endblock %}

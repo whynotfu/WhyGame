@@ -14,7 +14,7 @@ def create_app():
     migrate.init_app(app, db)
 
     # import models so Flask-Migrate can detect them
-    from app.models import User, Game, Comment, Notification  # noqa: F401
+    from app.models import User, Game, Comment, Notification, PlayHistory  # noqa: F401
 
     from app.routes.main import bp as main_bp
     from app.routes.auth import bp as auth_bp

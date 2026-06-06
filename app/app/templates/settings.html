@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+{% block title %}Settings — WhyGame{% endblock %}
+
+{% block content %}
+<div class="sett-layout">
+
+  <!-- ── Sidebar nav ── -->
+  <nav class="sett-nav">
+    <a href="#account"  class="sett-nav__item sett-nav__item--active">Account</a>
+    <a href="#privacy"  class="sett-nav__item">Privacy</a>
+    <a href="#danger"   class="sett-nav__item sett-nav__item--danger">Danger Zone</a>
+    <hr class="sett-nav__sep">
+    <a href="{{ url_for('users.profile') }}" class="sett-nav__item">← Back to profile</a>
+  </nav>
+
+  <!-- ── Main content ── -->
+  <div class="sett-content">
+
+    <!-- ── Account ── -->
+    <section class="sett-section" id="account">
+      <h2 class="sett-section__title">Account</h2>
+
+      <!-- Change username -->
+      <div class="sett-card">
+        <div class="sett-card__header">
+          <div>
+            <h3 class="sett-card__name">Username</h3>
+            <p class="sett-card__desc">Current: <strong>{{ user.username }}</strong></p>
+          </div>
+        </div>
+        <form method="post" action="{{ url_for('users.settings') }}" class="sett-form">
+          <input type="hidden" name="action" value="username">
+          <div class="sett-form__row">
+            <input class="sett-form__input" type="text" name="username"
+                   placeholder="New username" minlength="3" maxlength="32" required autocomplete="username">
+            <button class="fb-btn fb-btn--primary sett-form__btn" type="submit">Update</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Change email -->
+      <div class="sett-card">
+        <div class="sett-card__header">
+          <div>
+            <h3 class="sett-card__name">Email address</h3>
+            <p class="sett-card__desc">Current: <strong>{{ user.email }}</strong></p>
+          </div>
+        </div>
+        <form method="post" action="{{ url_for('users.settings') }}" class="sett-form">
+          <input type="hidden" name="action" value="email">
+          <div class="sett-form__row">
+            <input class="sett-form__input" type="email" name="email"
+                   placeholder="New email address" required autocomplete="email">
+            <button class="fb-btn fb-btn--primary sett-form__btn" type="submit">Update</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Change password -->
+      <div class="sett-card">
+        <div class="sett-card__header">
+          <h3 class="sett-card__name">Password</h3>
+          <p class="sett-card__desc">Choose a strong password, at least 6 characters.</p>
+        </div>
+        <form method="post" action="{{ url_for('users.settings') }}" class="sett-form sett-form--col">
+          <input type="hidden" name="action" value="password">
+          <input class="sett-form__input" type="password" name="current_password"
+                 placeholder="Current password" required autocomplete="current-password">
+          <input class="sett-form__input" type="password" name="new_password"
+                 placeholder="New password (min 6 chars)" required minlength="6" autocomplete="new-password">
+          <input class="sett-form__input" type="password" name="confirm_password"
+                 placeholder="Confirm new password" required autocomplete="new-password">
+          <div>
+            <button class="fb-btn fb-btn--primary sett-form__btn" type="submit">Change password</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- ── Privacy ── -->
+    <section class="sett-section" id="privacy">
+      <h2 class="sett-section__title">Privacy</h2>
+
+      <div class="sett-card">
+        <form method="post" action="{{ url_for('users.settings') }}">
+          <input type="hidden" name="action" value="privacy">
+          <div class="sett-toggle-row">
+            <div>
+              <h3 class="sett-card__name">Public profile</h3>
+              <p class="sett-card__desc">
+                When on, your profile and activity are visible to other users.
+                When off, only you can see your profile page.
+              </p>
+            </div>
+            <label class="sett-toggle">
+              <input type="checkbox" name="is_public" id="togglePublic"
+                     {% if user.is_public %}checked{% endif %}
+                     onchange="this.form.submit()">
+              <span class="sett-toggle__track">
+                <span class="sett-toggle__thumb"></span>
+              </span>
+            </label>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- ── Danger Zone ── -->
+    <section class="sett-section" id="danger">
+      <h2 class="sett-section__title sett-section__title--danger">Danger Zone</h2>
+
+      <div class="sett-card sett-card--danger">
+        <div class="sett-card__header">
+          <div>
+            <h3 class="sett-card__name">Delete account</h3>
+            <p class="sett-card__desc">
+              Permanently deletes your account, all your games, comments and data.
+              This action <strong>cannot be undone</strong>.
+            </p>
+          </div>
+        </div>
+        <form method="post" action="{{ url_for('users.settings') }}" class="sett-form sett-form--col"
+              onsubmit="return document.getElementById('deleteConfirm').value === '{{ user.username }}'
+                        || (alert('Type your username correctly to confirm.'), false)">
+          <input type="hidden" name="action" value="delete">
+          <p class="sett-delete__hint">
+            Type <strong>{{ user.username }}</strong> to confirm:
+          </p>
+          <div class="sett-form__row">
+            <input class="sett-form__input sett-form__input--danger" type="text"
+                   name="confirm_text" id="deleteConfirm"
+                   placeholder="{{ user.username }}" autocomplete="off">
+            <button class="fb-btn fb-btn--danger sett-form__btn" type="submit">
+              Delete my account
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+  </div>
+</div>
+{% endblock %}

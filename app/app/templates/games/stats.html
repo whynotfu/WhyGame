@@ -1,0 +1,204 @@
+{% extends 'base.html' %}
+{% block title %}Statistics — WhyGame{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+
+<!-- ── Header ── -->
+<div class="mygames-header">
+  <div>
+    <h1 class="mygames-header__title">Statistics</h1>
+    <span class="mygames-header__sub">All-time data across {{ games|length }} game{{ 's' if games|length != 1 }}</span>
+  </div>
+  <a href="{{ url_for('games.my_games') }}" class="fb-btn fb-btn--secondary">← My Games</a>
+</div>
+
+<!-- ── Summary cards ── -->
+<div class="st-summary">
+  <div class="st-card">
+    <span class="st-card__value">{{ total_plays }}</span>
+    <span class="st-card__label">Total Plays</span>
+  </div>
+  <div class="st-card">
+    <span class="st-card__value">{{ games|length }}</span>
+    <span class="st-card__label">Games</span>
+    <span class="st-card__sub">{{ published_count }} published · {{ draft_count }} draft</span>
+  </div>
+  <div class="st-card">
+    <span class="st-card__value">{{ total_comments }}</span>
+    <span class="st-card__label">Comments</span>
+  </div>
+  <div class="st-card">
+    {% if avg_rating %}
+      <span class="st-card__value st-card__value--gold">★ {{ avg_rating }}</span>
+    {% else %}
+      <span class="st-card__value st-card__value--muted">—</span>
+    {% endif %}
+    <span class="st-card__label">Avg Rating</span>
+  </div>
+</div>
+
+{% if games %}
+<!-- ── Charts row ── -->
+<div class="st-charts">
+
+  <!-- Plays per game (bar) -->
+  <div class="st-chart-box">
+    <h2 class="st-chart-box__title">Plays per game</h2>
+    <div class="st-chart-box__wrap">
+      <canvas id="playsChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Rating distribution (doughnut) -->
+  <div class="st-chart-box st-chart-box--sm">
+    <h2 class="st-chart-box__title">Rating distribution</h2>
+    {% set total_ratings = rating_dist.values()|sum %}
+    {% if total_ratings > 0 %}
+    <div class="st-chart-box__wrap st-chart-box__wrap--donut">
+      <canvas id="ratingChart"></canvas>
+    </div>
+    {% else %}
+      <div class="st-no-ratings">No ratings yet</div>
+    {% endif %}
+  </div>
+
+</div>
+
+<!-- ── Per-game table ── -->
+<div class="st-table-box">
+  <h2 class="st-chart-box__title">Game breakdown</h2>
+  <table class="st-table">
+    <thead>
+      <tr>
+        <th>Game</th>
+        <th>Status</th>
+        <th>Plays</th>
+        <th>Comments</th>
+        <th>Avg Rating</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for game in games %}
+      <tr>
+        <td>
+          <a href="{{ url_for('games.detail', slug=game.slug) }}" class="st-table__link">
+            {{ game.title }}
+          </a>
+        </td>
+        <td>
+          {% if game.is_published %}
+            <span class="mgcard__badge mgcard__badge--live">Published</span>
+          {% else %}
+            <span class="mgcard__badge mgcard__badge--draft">Draft</span>
+          {% endif %}
+        </td>
+        <td class="st-table__num">{{ game.plays }}</td>
+        <td class="st-table__num">{{ game.comment_count }}</td>
+        <td class="st-table__num st-table__num--gold">
+          {% if game.avg_rating %}★ {{ "%.1f"|format(game.avg_rating) }}{% else %}—{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% else %}
+<div class="empty-state">
+  <p class="empty-state__text">Publish your first game to see statistics.</p>
+  <a href="{{ url_for('games.publish') }}" class="fb-btn fb-btn--primary" style="margin-top:12px">
+    Publish a game
+  </a>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+{% if games %}
+<script>
+const LABELS = {{ chart_labels | tojson }};
+const PLAYS  = {{ chart_plays  | tojson }};
+
+const RDIST = [
+  {{ rating_dist[1] }},
+  {{ rating_dist[2] }},
+  {{ rating_dist[3] }},
+  {{ rating_dist[4] }},
+  {{ rating_dist[5] }}
+];
+
+/* ── Plays bar chart ── */
+new Chart(document.getElementById('playsChart'), {
+  type: 'bar',
+  data: {
+    labels: LABELS,
+    datasets: [{
+      label: 'Plays',
+      data: PLAYS,
+      backgroundColor: 'rgba(119,176,201,0.75)',
+      borderColor: 'rgba(119,176,201,1)',
+      borderWidth: 1,
+      borderRadius: 6,
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.y} plays` } }
+    },
+    scales: {
+      x: {
+        ticks: { color: '#7ea5b8', maxRotation: 30 },
+        grid: { color: 'rgba(127,177,200,0.08)' }
+      },
+      y: {
+        beginAtZero: true,
+        ticks: { color: '#7ea5b8', precision: 0 },
+        grid: { color: 'rgba(127,177,200,0.12)' }
+      }
+    }
+  }
+});
+
+/* ── Rating doughnut ── */
+const totalRatings = RDIST.reduce((a, b) => a + b, 0);
+if (totalRatings > 0) {
+  new Chart(document.getElementById('ratingChart'), {
+    type: 'doughnut',
+    data: {
+      labels: ['★ 1', '★ 2', '★ 3', '★ 4', '★ 5'],
+      datasets: [{
+        data: RDIST,
+        backgroundColor: ['#e05252','#e0903a','#e0c43a','#7eb86e','#4caf8c'],
+        borderWidth: 0,
+        hoverOffset: 6,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '62%',
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { color: '#7ea5b8', padding: 10, font: { size: 12 } }
+        },
+        tooltip: {
+          callbacks: {
+            label: ctx => ` ${ctx.parsed} vote${ctx.parsed !== 1 ? 's' : ''}`
+          }
+        }
+      }
+    }
+  });
+}
+</script>
+{% endif %}
+{% endblock %}

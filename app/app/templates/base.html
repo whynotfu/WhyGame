@@ -83,7 +83,7 @@
           <a href="{{ url_for('users.profile') }}" class="avatar-dropdown__item">
             <span class="avatar-dropdown__icon">◈</span> Profile
           </a>
-          <a href="#" class="avatar-dropdown__item">
+          <a href="{{ url_for('users.settings') }}" class="avatar-dropdown__item">
             <span class="avatar-dropdown__icon">⚙</span> Settings
           </a>
           <hr class="avatar-dropdown__sep">
@@ -175,8 +175,9 @@
       <div class="sidebar__section">
         <span class="sidebar__label">Developer</span>
         <ul class="sidebar__list">
-          <li><a href="#" class="sidebar__item">Upload Game</a></li>
-          <li><a href="#" class="sidebar__item">My Games</a></li>
+          <li><a href="{{ url_for('games.publish') }}" class="sidebar__item {% if request.endpoint == 'games.publish' %}sidebar__item--active{% endif %}">Upload Game</a></li>
+          <li><a href="{{ url_for('games.my_games') }}" class="sidebar__item {% if request.endpoint == 'games.my_games' %}sidebar__item--active{% endif %}">My Games</a></li>
+          <li><a href="{{ url_for('games.stats') }}" class="sidebar__item {% if request.endpoint == 'games.stats' %}sidebar__item--active{% endif %}">Statistics</a></li>
         </ul>
       </div>
       {% endif %}

@@ -45,6 +45,7 @@
       <div class="fb-profile-name-row">
         <h1 class="fb-profile-name">{{ user.username }}</h1>
         <span class="fb-role-badge fb-role-badge--{{ user.role }}">{{ user.role }}</span>
+        {% if not user.is_public %}<span class="fb-profile-private">🔒 Private</span>{% endif %}
       </div>
       {% if user.bio %}
         <p class="fb-profile-bio">{{ user.bio }}</p>
@@ -53,6 +54,8 @@
       {% endif %}
       <span class="fb-profile-since">Joined {{ user.created_at.strftime('%B %Y') }}</span>
     </div>
+
+    <a href="{{ url_for('users.settings') }}" class="fb-btn fb-btn--secondary fb-profile-settings">⚙ Settings</a>
 
   </div>
 </div>
@@ -189,45 +192,35 @@
   <!-- ── RIGHT COLUMN ────────────────────────────────────────────── -->
   <section class="fb-col fb-col--right">
 
-    <!-- Edit Profile -->
-    <div class="fb-card">
-      <h3 class="fb-card__title">Edit Profile</h3>
-      <form method="post" action="{{ url_for('users.profile') }}" class="fb-form">
-        <input type="hidden" name="action" value="info">
-
-        <div class="fb-form__row">
-          <div class="fb-form__field">
-            <label class="fb-form__label">Username</label>
-            <input class="fb-form__input" type="text" name="username"
-                   value="{{ user.username }}" minlength="3" maxlength="32" required>
-          </div>
-          <div class="fb-form__field">
-            <label class="fb-form__label">Email</label>
-            <input class="fb-form__input" type="email" name="email"
-                   value="{{ user.email }}" required>
-          </div>
-        </div>
-
-        <div class="fb-form__actions">
-          <button class="fb-btn fb-btn--primary" type="submit">Save changes</button>
-        </div>
-      </form>
-    </div>
-
-    <!-- Danger zone -->
-    <div class="fb-card fb-card--danger">
-      <h3 class="fb-card__title">Danger Zone</h3>
-      <p class="fb-danger-desc">Once you delete your account, there is no going back.</p>
-      <form method="post" action="{{ url_for('users.delete_account') }}"
-            onsubmit="return confirm('Delete your account permanently?')">
-        <button class="fb-btn fb-btn--danger" type="submit">Delete account</button>
-      </form>
-    </div>
-
     <!-- Recently played -->
     <div class="fb-card">
       <h3 class="fb-card__title">Recently Played</h3>
-      <div class="pf-recent">
+      {% if recently_played %}
+        <div class="pf-recent-grid">
+          {% for ph in recently_played %}
+          {%- set g = ph.game -%}
+          {%- set bg = g.bg_color or '#0B1538' -%}
+          <a href="{{ url_for('games.detail', slug=g.slug) }}" class="pf-rgame"
+             style="--rg-bg:{{ bg }}">
+            <div class="pf-rgame__thumb">
+              {% if g.thumbnail_url %}
+                <img src="{{ g.thumbnail_url }}" alt="{{ g.title }}">
+              {% else %}
+                <svg viewBox="0 0 32 32" fill="none" width="22" height="22">
+                  <path d="M4 24l8-10 5 6 4-5 9 9H4z" fill="rgba(255,255,255,0.18)"/>
+                  <circle cx="22" cy="10" r="3" fill="rgba(255,255,255,0.18)"/>
+                </svg>
+              {% endif %}
+              <div class="pf-rgame__overlay">▶</div>
+            </div>
+            <div class="pf-rgame__info">
+              <span class="pf-rgame__title">{{ g.title }}</span>
+              <span class="pf-rgame__date">{{ ph.played_at.strftime('%d %b') }}</span>
+            </div>
+          </a>
+          {% endfor %}
+        </div>
+      {% else %}
         <div class="pf-recent__empty">
           <svg viewBox="0 0 48 48" fill="none">
             <rect x="6" y="14" width="36" height="24" rx="4" stroke="currentColor" stroke-width="2"/>
@@ -236,7 +229,7 @@
           <span>No games played yet</span>
           <a href="{{ url_for('games.catalog') }}" class="pf-recent__cta">Browse games →</a>
         </div>
-      </div>
+      {% endif %}
     </div>
 
   </section>
