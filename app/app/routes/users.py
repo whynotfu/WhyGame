@@ -5,12 +5,15 @@ from app import db
 from app.models.user import User
 from app.utils import login_required
 
+# Регистрация blueprint для пользователей
 bp = Blueprint('users', __name__)
 
+# Папка для хранения аватарок и разрешённые форматы изображений
 AVATARS_BASE = '/app/storage/avatars'
 ALLOWED_IMG  = {'jpg', 'jpeg', 'png', 'webp', 'gif'}
 
 
+# Сохраняет загруженный файл аватарки на диск, возвращает URL или None если формат не поддерживается
 def save_avatar(file, user_id):
     ext = file.filename.rsplit('.', 1)[-1].lower()
     if ext not in ALLOWED_IMG:
@@ -25,11 +28,13 @@ def save_avatar(file, user_id):
 @bp.route('/profile', methods=['GET', 'POST'])
 @login_required
 def profile():
+    # Загружаем текущего пользователя из базы
     user = User.query.get(session['user_id'])
 
     if request.method == 'POST':
         action = request.form.get('action')
 
+        # Смена аватарки
         if action == 'avatar':
             f = request.files.get('avatar_file')
             if f and f.filename:
@@ -43,17 +48,20 @@ def profile():
                     flash('Unsupported file type', 'error')
             return redirect(url_for('users.profile'))
 
+        # Обновление имени пользователя, почты и биографии
         if action == 'info':
             username = request.form.get('username', '').strip()
             email = request.form.get('email', '').strip()
             bio = request.form.get('bio', '').strip()
 
+            # Проверка уникальности нового имени
             if username and username != user.username:
                 if User.query.filter_by(username=username).first():
                     flash('Username already taken', 'error')
                     return redirect(url_for('users.profile'))
                 user.username = username
 
+            # Проверка уникальности новой почты
             if email and email != user.email:
                 if User.query.filter_by(email=email).first():
                     flash('Email already in use', 'error')
@@ -66,22 +74,26 @@ def profile():
             session['username'] = user.username
             flash('Profile updated', 'success')
 
+        # Обновление только биографии
         elif action == 'bio':
             user.bio = request.form.get('bio', '').strip()
             db.session.commit()
             flash('Bio updated', 'success')
 
+        # Заявка на повышение роли (developer или moderator)
         elif action == 'apply':
             from app.models.notification import Notification
             from app.routes.notifications import send_notifications
             role_req = request.form.get('role_request', '')
 
+            # Игрок сразу становится разработчиком
             if role_req == 'developer' and user.role == 'player':
                 user.role = 'developer'
                 session['role'] = 'developer'
                 db.session.commit()
                 flash('You are now a Developer! You can publish games.', 'success')
 
+            # Заявка на модератора — уведомляем всех админов и модераторов
             elif role_req == 'moderator' and user.role in ('player', 'developer'):
                 recipients = User.query.filter(
                     User.role.in_(['admin', 'moderator']),
@@ -100,6 +112,7 @@ def profile():
             else:
                 flash('You are not eligible for this role upgrade.', 'error')
 
+        # Смена пароля с проверкой текущего
         elif action == 'password':
             current = request.form.get('current_password', '')
             new_pw = request.form.get('new_password', '')
@@ -115,6 +128,7 @@ def profile():
 
         return redirect(url_for('users.profile'))
 
+    # GET: собираем последние сыгранные игры и статистику для отображения профиля
     from app.models.play_history import PlayHistory
     recently_played = (
         PlayHistory.query
@@ -134,11 +148,13 @@ def profile():
 @bp.route('/settings', methods=['GET', 'POST'])
 @login_required
 def settings():
+    # Загружаем текущего пользователя из базы
     user = User.query.get(session['user_id'])
 
     if request.method == 'POST':
         action = request.form.get('action')
 
+        # Смена имени пользователя с проверкой занятости
         if action == 'username':
             username = request.form.get('username', '').strip()
             if not username:
@@ -153,6 +169,7 @@ def settings():
                 db.session.commit()
                 flash('Username updated', 'success')
 
+        # Смена почты с проверкой занятости
         elif action == 'email':
             email = request.form.get('email', '').strip()
             if not email:
@@ -166,6 +183,7 @@ def settings():
                 db.session.commit()
                 flash('Email updated', 'success')
 
+        # Смена пароля с подтверждением
         elif action == 'password':
             current = request.form.get('current_password', '')
             new_pw  = request.form.get('new_password', '')
@@ -181,11 +199,13 @@ def settings():
                 db.session.commit()
                 flash('Password changed', 'success')
 
+        # Переключение видимости профиля (публичный / приватный)
         elif action == 'privacy':
             user.is_public = 'is_public' in request.form
             db.session.commit()
             flash('Privacy setting saved', 'success')
 
+        # Удаление аккаунта с подтверждением через ввод имени пользователя
         elif action == 'delete':
             confirm_text = request.form.get('confirm_text', '').strip()
             if confirm_text != user.username:
@@ -202,6 +222,7 @@ def settings():
     return render_template('settings.html', user=user)
 
 
+# Быстрое удаление аккаунта без подтверждения (используется отдельным POST-запросом)
 @bp.route('/profile/delete', methods=['POST'])
 @login_required
 def delete_account():
